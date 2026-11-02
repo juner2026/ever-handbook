@@ -18,7 +18,7 @@
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdf5f3">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2a1c22">
 <title>Ever</title>
-<script>window.__everVer="8.09-20261102-1252-mobile";</script>
+<script>window.__everVer="8.10-20261102-1309-mobile";</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'PingFang SC','Hiragino Sans GB',sans-serif}
@@ -50326,15 +50326,20 @@ html[data-te-mat="journal"] .set-row:active{transform:scale(.992)!important}
     }catch(e){}
   }
 
-  function layout(){
+  function layout(force){
     if(!box) return;
     /* ★ 6.51：开屏动画播放期间冻结重排。
        进全屏（或地址栏收起）会改视口尺寸 → 立刻重排 → 桌面上正在播的开屏动画
        按旧尺寸定了位，一重排就"乱跳"（用户报的 bug）。
        策略：第一次照常排；之后若开屏还没结束（没收到 jh:splash-done 且未超 12s），先不动，
-       等它播完再补一次 layout。 */
+       等它播完再补一次 layout。
+       ★ 8.10：两条补充 ——
+         (a) `force` 为真时无条件重排（自检纠偏用，否则修不动）；
+         (b) 冻结最多 2.5 秒（原来要等 jh:splash-done，最坏 9~12 秒；首屏量歪了就会一直卡着）。 */
     try{
-      if(box.dataset.tw && !window.__jhSplashDone && !window.__everSplashTimeout){
+      if(!window.__everLayoutAt) window.__everLayoutAt = Date.now();
+      var _frozen = (Date.now() - window.__everLayoutAt) < 2500;
+      if(!force && box.dataset.tw && _frozen && !window.__jhSplashDone && !window.__everSplashTimeout){
         window.__everLayoutPending = 1;
         return;
       }
@@ -50557,7 +50562,11 @@ html[data-te-mat="journal"] .set-row:active{transform:scale(.992)!important}
 
   /* ★ 6.19：缩放比例可能比 mount 晚到（tbFit 设 meta 之后 innerWidth 会变），
      尺寸和缩放一旦对不上就重排 —— 否则 iframe 会比武口宽一倍，整页被裁。 */
-  window.__jhRelayout=function(){ try{ layout(); }catch(e){} };
+  window.__jhRelayout=function(force){ try{ layout(force);
+
+    /* 8.10：强制重排时顺手把"冻结"标记清掉，免得后面又被挡住 */
+    if(force){ try{ window.__jhSplashDone = 1; window.__everLayoutPending = 0; }catch(e){} }
+  }catch(e){} };
   (function(){
     /* ★ 6.41：原来只在 scale 变化时重排 —— 地址栏收起/展开只改视口高度、不改 scale，
        盒子就一直停在旧尺寸（真机实测 box 1238×731，而视口 825×525×s 应该是 ×787），
@@ -60675,7 +60684,8 @@ html.te-immersive .ch-hd{padding-top:calc(8px + env(safe-area-inset-top,0px))!im
         var FZ=window.__teFreeze; if(FZ){ FZ.w=Math.min(vw,vh); FZ.h=Math.max(vw,vh); }
       }catch(e){}
       try{ box.__laySig=''; }catch(e){}
-      try{ window.__jhRelayout && window.__jhRelayout(); }catch(e){}
+      /* ★ 8.10：必须带 force —— 不带的话会被"开屏冻结"挡住，盒子永远修不回来 */
+      try{ window.__jhRelayout && window.__jhRelayout(true); }catch(e){}
       fixes++;
       /* 连修 3 次还不对，就把盒子按视口硬钉一次（最兜底） */
       if(fixes>=3){
