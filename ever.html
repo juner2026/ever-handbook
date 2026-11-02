@@ -18,7 +18,7 @@
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdf5f3">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2a1c22">
 <title>Ever</title>
-<script>window.__everVer="8.07-20261102-1018-mobile";</script>
+<script>window.__everVer="8.08-20261102-1052-mobile";</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'PingFang SC','Hiragino Sans GB',sans-serif}
@@ -11807,8 +11807,11 @@ html.tb-zoom #p-whisper .wh-sel-list{max-height:calc((46vh) / var(--tbz,1))!impo
     var touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
     return touch && Math.min((screen.width||9999), (screen.height||9999)) < 1400;
   }
-  function devW(){ return Math.round(screen.width  || window.innerWidth  || 0); }
-  function devH(){ return Math.round(screen.height || window.innerHeight || 0); }
+  /* ★ 8.08：**先看 CSS 视口**（innerWidth/innerHeight），screen 只作兜底。
+     Android WebView 的 screen.width/height 经常是物理像素（1080×2412）——
+     拿它判"平板"，手机就会被放大到 1.9 倍（APK 里"比例错误"就是这么来的）。 */
+  function devW(){ return Math.round(window.innerWidth  || screen.width  || 0); }
+  function devH(){ return Math.round(window.innerHeight || screen.height || 0); }
 
   function setZoom(z){
     window.__TBZ = z;
@@ -57772,8 +57775,11 @@ html body #p-whisper .wh-msg.is-user .wh-msg-bubble,
      ?tablet=1 一样关掉，方便对照。 */
   var PHONE=false;
   try{
-    var sw=(window.screen&&screen.width)||0, sh=(window.screen&&screen.height)||0;
-    PHONE = !!(sw&&sh&&Math.min(sw,sh)<=560);
+    /* ★ 8.08：短边以 CSS 视口为准（WebView 的 screen 是物理像素，会把手机判成平板）。
+       取不到才退 screen。阈值和 tbFit 的 PHONE_SHORT 统一成 600。 */
+    var _pw=(window.innerWidth||0)||((window.screen&&screen.width)||0);
+    var _ph=(window.innerHeight||0)||((window.screen&&screen.height)||0);
+    PHONE = !!(_pw&&_ph&&Math.min(_pw,_ph)<=600);
   }catch(e){}
   /* ★ 8.01：`?phone=1` 就是"按手机画"。真机上（vivo WebView）screen 报 1050×700，
      短边 700 > 560 → PHONE 会被判成 false，`?phone=1` 白写，冻结/缩放全走平板分支，
