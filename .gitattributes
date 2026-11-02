@@ -1,0 +1,7 @@
+# 这几个是构建产物 / 单文件大资源，不让 git 做文本 diff
+ever.html      binary
+*.bak*         binary
+*.png binary
+*.jpg binary
+*.webp binary
+*.woff2 binary

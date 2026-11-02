@@ -1,0 +1,113 @@
+/* ============================================================================
+   7.37 · 米纸 + 立体（只改手机版）
+   ----------------------------------------------------------------------------
+   用户口径：上一版"加光"发糊，不好看；重做一套。
+   这一套两件事：
+     ① 米纸 —— 纸从"粉纸"换成"米白信纸"，网格由粉转淡金；
+        粉不再铺满整页，只留在字（问候/日期/印章）、胶带、爱心这些点缀上。
+        只在默认主题 data-theme="milk" 下生效：另外三个主题点按还是原来的样子。
+     ② 立体 —— 颜色不动，只把纸做厚：
+        卡片多加一层"纸上压出来的"硬影子 + 一张暖色描边（切边），
+        胶带/图钉/宝丽来有真影子，装订孔从"打的洞"改成"铜圈"。
+   只动手机版（data-view="phone"）；平板版式与原来逐像素一致。
+   回滚：把这一个文件从 _mobile/build.py 的 PATCH_ORDER 里去掉即可（见 7.37 说明文档）。
+   ========================================================================== */
+
+/* ==========================================================================
+   ① 米纸：一叠米白信纸
+   ========================================================================== */
+html[data-view="phone"][data-theme="milk"]{
+  --milk:#fffdf8;                       /* 纸本身：米白 */
+  --sheet:#fffefb;                      /* 贴上去的纸片：更白一点 */
+  --sheet2:#fdf8f1;
+  --grid:rgba(214,180,143,.30);         /* 方格：淡金（原来是一粉） */
+  --line:rgba(232,206,178,.78);         /* 横线纸的线 */
+  --dot:rgba(214,180,143,.55);          /* 点阵纸的点 */
+  --ink:#4e3b43;                        /* 墨：偏暖的深梅 */
+  --ink2:#8a737c;
+  --ink3:#b5a3a6;
+}
+
+/* 纸上的三团光：粉只留一丝，右下换成一点暖，别把米白刷回粉 */
+html[data-view="phone"][data-theme="milk"] .app{
+  background:
+    radial-gradient(70% 32% at 6% -6%,  rgba(246,214,225,.30), transparent 66%),
+    radial-gradient(56% 28% at 98% 10%, rgba(251,232,238,.30), transparent 72%),
+    radial-gradient(60% 30% at 18% 104%, rgba(236,218,192,.34), transparent 74%),
+    var(--milk);
+}
+
+/* 顶条那层奶白要跟着变，否则滚动时会露一条旧的粉白 */
+html[data-view="phone"][data-theme="milk"] .topbar{
+  background:linear-gradient(180deg, rgba(255,253,248,.95), rgba(255,253,248,.55) 70%, rgba(255,253,248,0));
+}
+/* 撕纸边、宝丽来角贴这些"露底色"的零件也跟着米纸走 */
+html[data-view="phone"][data-theme="milk"] .torn-top::before{background:var(--milk)}
+
+/* ==========================================================================
+   ② 立体：纸做得厚一点
+   ========================================================================== */
+
+/* 卡片：一层切边（描边）+ 一层贴在纸上的硬影 + 两层远处的软影 */
+html[data-view="phone"] .entry .card{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.97),
+    inset 0 -1px 0 rgba(168,128,141,.06),
+    0 0 0 1px rgba(238,226,206,.85),
+    0 1px 1px rgba(163,124,137,.16),
+    0 3px 2px -2px rgba(163,124,137,.15),
+    0 10px 16px -12px rgba(150,112,124,.60),
+    0 22px 34px -28px rgba(150,112,124,.48);
+}
+
+/* 贴纸类的纸片（slip / 状态条）少一层远处软影，避免整页发灰 */
+html[data-view="phone"] .stats,
+html[data-view="phone"] .slip{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.97),
+    0 0 0 1px rgba(238,226,206,.80),
+    0 2px 4px -3px rgba(163,124,137,.20),
+    0 10px 18px -16px rgba(150,112,124,.58);
+}
+
+/* 胶带：真的"贴"在纸上 —— 边缘有一点影子 */
+html[data-view="phone"] .entry .card .tape{
+  box-shadow:0 2px 4px -1px rgba(150,112,124,.30), var(--hilite);
+}
+/* 图钉：针尖压出来的那圈暗 */
+html[data-view="phone"] .pin{
+  box-shadow:0 3px 5px -2px rgba(140,104,118,.58), inset -1px -1px 2px rgba(150,110,124,.30);
+}
+/* 宝丽来：白边厚一点，离纸更高 */
+html[data-view="phone"] .polaroid,
+html[data-view="phone"] .polaroid--sm{
+  box-shadow:0 5px 12px -6px rgba(150,112,124,.58), 0 1px 0 rgba(168,128,141,.20);
+}
+
+/* 书脊：左边一条压出来的暗，纸才像被装订进去 */
+html[data-view="phone"] .binding::before{
+  background:linear-gradient(90deg, rgba(150,108,122,.24), rgba(150,108,122,.07) 46%, transparent);
+  border-right:1px dashed rgba(198,142,164,.46);
+}
+/* 装订孔：从"挖进去的洞"改成"铜圈" —— 圈里露纸、圈外一圈黄铜 */
+html[data-view="phone"] .binding i{
+  background:
+    radial-gradient(circle at 50% 50%, var(--milk) 0 34%, transparent 36%),
+    radial-gradient(circle at 50% 30%, #fff9ef 0 40%, #e6c99f 56%, #c4a06f 100%);
+  box-shadow:
+    inset 0 1px 2px rgba(120,88,58,.42),
+    inset 0 -1px 1px rgba(255,255,255,.72),
+    0 1px 0 rgba(255,255,255,.92),
+    0 1px 2px rgba(140,104,118,.22);
+}
+
+/* 分隔虚线（页脚统计、待办这些）跟米纸的暖线对齐 */
+html[data-view="phone"] .stats .cell+.cell{border-left-color:rgba(232,206,178,.90)}
+html[data-view="phone"] .footnote .ln{background:linear-gradient(90deg,transparent,rgba(214,180,143,.75),transparent)}
+
+/* 少动一点：不做位移，只留影子 */
+@media (prefers-reduced-motion: reduce){
+  html[data-view="phone"] .entry .card,
+  html[data-view="phone"] .stats,
+  html[data-view="phone"] .slip{transition:none}
+}

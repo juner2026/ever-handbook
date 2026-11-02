@@ -1,0 +1,9 @@
+# 构建/备份/截图
+_mobile/out/
+_mobile/shots/
+*.bak*
+*.bak-before-*
+_diag.log
+_diag_server.py
+*.log
+.DS_Store

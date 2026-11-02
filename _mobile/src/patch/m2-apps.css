@@ -1,0 +1,1961 @@
+/* ============================================================================
+   Ever · 手机端（M2）
+   —— 只用你原来的零件：.sheet 纸 / .grid-s 网格 / .cell2 组件 / .art 线稿
+      （fl/fl2/fl3/fl4 平涂 + st 描边 + en-hand 手写 + 宋体小注）
+   新增的只有：全屏（100dvh + 安全区）、应用页 #pg-apps、首页里的「应用」纸、
+   丝带上的第 4 枚书签。视觉语言一套都不新造。
+   ========================================================================== */
+
+/* ============================================================================
+   1. 全屏：真 100dvh + 刘海/手势条安全区
+   ========================================================================== */
+html[data-mh="phone"],
+html[data-mh="phone"] body{
+  width:100%;height:100%;height:100dvh;
+  overscroll-behavior:none;
+}
+html[data-mh="phone"] .app{
+  height:100dvh!important;width:100%!important;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  padding-left:env(safe-area-inset-left,0px);
+  padding-right:env(safe-area-inset-right,0px);
+  box-sizing:border-box;
+}
+/* 顶栏：手机上收成一行 —— 品牌在左，色点在右（应用入口在丝带第 4 枚上） */
+html[data-mh="phone"] .topbar{
+  height:auto!important;padding:10px 10px 6px 26px!important;gap:8px;align-items:center;
+}
+html[data-mh="phone"] .topbar .tt{gap:8px;min-width:0}
+html[data-mh="phone"] .topbar .tt b.brand-script{font-size:23px!important}
+html[data-mh="phone"] .topbar .tt s,
+html[data-mh="phone"] .topbar .tt u.verchip,
+html[data-mh="phone"] .topbar .viewchip,
+html[data-mh="phone"] .topbar .mhchip,
+html[data-mh="phone"] .topbar .sizebox{display:none!important}
+html[data-mh="phone"] .topbar .jh-apps-chip{display:none!important}
+html[data-mh="phone"] .topbar .dots{gap:6px;margin-left:auto;flex:0 0 auto}
+html[data-mh="phone"] .topbar .dots button{width:19px;height:19px}
+/* 内页：左右给丝带让出位置，底部给翻页让出位置 */
+html[data-mh="phone"] #pg-home,
+html[data-mh="phone"] #pg-apps{
+  padding:2px calc(48px + env(safe-area-inset-right,0px)) calc(56px + env(safe-area-inset-bottom,0px)) 12px!important;
+}
+/* 每屏自己滚的时候，底部留出翻页胶囊的高度，最后一排不会被压在下面 */
+html[data-mh="phone"] .screen{padding-bottom:12px!important}
+html[data-mh="phone"] .screen{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+html[data-mh="phone"] #dotTxt{display:none}
+
+/* 翻页胶囊：手机上大一点、位置抬到安全区之上 */
+html[data-mh="phone"] .pager{width:32px;height:32px;opacity:.9}
+html[data-mh="phone"] #sdots{
+  bottom:calc(8px + env(safe-area-inset-bottom,0px));
+  padding:5px 12px;gap:7px;
+  background:rgba(255,252,250,.84);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  border-radius:999px;
+  box-shadow:0 1px 2px rgba(150,112,124,.12), 0 8px 18px -14px rgba(150,112,124,.6);
+}
+
+/* ============================================================================
+   2. 应用组件：沿用 .sheet / .grid-s / .cell2，只调密度
+   ========================================================================== */
+.m2-appsheet{padding:18px 14px 14px}
+/* 应用页：宽屏 7 列 4 行，同样一屏装完、不上下翻 */
+@media (min-width:660px){
+  #pg-apps{display:flex;flex-direction:column;overflow:hidden}
+  #pg-apps .m2-apphead{flex:0 0 auto}
+  #pg-apps .m2-appsheet{flex:1 1 auto;min-height:0;display:flex;padding:16px 20px 16px 30px}
+  #pg-apps .m2-appgrid{
+    flex:1 1 auto;width:100%;min-height:0;
+    grid-template-columns:repeat(7,minmax(0,1fr));
+    grid-template-rows:none;grid-auto-rows:min-content;
+    align-content:space-evenly;
+  }
+  #pg-apps .m2-appgrid .cell2{padding:4px 6px;gap:4px}
+  #pg-apps .cell2 .art{width:42px;height:42px}
+  #pg-apps .cell2 .en{font-size:20px}
+  #pg-apps .cell2 .cn{font-size:11.5px}
+  #pg-apps .m2-appfoot{flex:0 0 auto}
+}
+/* 点下去要有回应（沿用桌面 .pressable 的手感） */
+.m2-appgrid .cell2{transition:transform 150ms var(--ease-out,cubic-bezier(.23,1,.32,1))}
+.m2-appgrid .cell2:active{transform:scale(.955)}
+
+
+/* 标题下面一条手绘波浪线（桌面本来就有 .hand-hr 这个零件） */
+/* 6.x 里有一条 `html .hand-hr{display:none!important}` 把它全关了；
+   这里只给应用页抬头这一条重新打开（别的页不受影响） */
+html .m2-apphead .m2-hand-hr{display:block!important;width:96px;margin:2px 0 0 1px;opacity:.72}
+html[data-mh="phone"] .m2-apphead .m2-hand-hr{width:72px;margin-top:1px}
+
+/* ---------- 2.2 应用页那张纸：胶带 / 打孔 / 折角 / 书牌（全用桌面原有零件） ---------- */
+.m2-appsheet--page{position:relative;overflow:hidden}
+/* 左边一道装订阴影：纸贴在本子上的那点厚度 */
+.m2-appsheet--page::before{
+  background:
+    linear-gradient(90deg, rgba(168,128,141,.10), rgba(168,128,141,.03) 9%, transparent 16%),
+    none;
+  border:1.4px dashed rgba(238,188,204,.8);
+}
+/* 石膏白的纸面：比原来多一层极淡的暖色，纸看起来更厚 */
+.m2-appsheet--page{
+  /* 底纸不再是一块纯色：
+     ① 左上角一层水彩粉晕、右下角一层藕荷薄雾（和整页背景同一手笔）
+     ② 极淡的横线纸纹（26px 一行，alpha 只到 .13，不抢图标）
+     ③ 纸本身仍是那层暖白渐变 */
+  background:
+    radial-gradient(58% 46% at -6% -10%, rgba(248,220,231,.30), rgba(248,220,231,0) 62%),
+    radial-gradient(52% 44% at 106% 108%, rgba(228,208,234,.22), rgba(228,208,234,0) 64%),
+    repeating-linear-gradient(0deg,
+      rgba(208,158,180,.12) 0 1px,
+      rgba(208,158,180,0) 1px 26px),
+    linear-gradient(158deg, #fffdf9 0%, #fdf9f5 44%, #fcf4f1 100%);
+  box-shadow:
+    2px 3px 0 rgba(163,124,137,.13),
+    0 18px 34px -22px rgba(150,112,124,.6),
+    inset 0 1px 0 rgba(255,255,255,.95);
+}
+/* 左边距线：像本子印的那道红线（虚线，跟装订孔对齐） */
+.m2-margin{
+  position:absolute;left:23px;top:12px;bottom:12px;width:0;z-index:1;pointer-events:none;
+  border-left:1px dashed rgba(224,156,181,.55);
+}
+/* 纸纤维颗粒：一层极淡的 noise，只在这一页 */
+.m2-grain{
+  position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.055;
+  mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:140px 140px;
+}
+/* 颗粒和装饰都不能压到图标上 */
+.m2-appsheet--page .m2-appgrid{position:relative;z-index:2}
+/* 胶带：左上一条金、右下一条短粉 */
+.m2-tape-tl{
+  position:absolute;left:-14px;top:-9px;width:96px;height:30px;
+  transform:rotate(-7deg);
+  opacity:.92;
+}
+.m2-tape-tr{
+  position:absolute;right:16px;top:-8px;width:62px;height:22px;
+  transform:rotate(6deg);opacity:.88;z-index:3;
+  background:
+    repeating-linear-gradient(113deg, rgba(255,255,255,.62) 0 5px, rgba(255,255,255,.16) 5px 9px),
+    linear-gradient(180deg, rgba(238,188,204,.72), rgba(224,156,181,.62));
+}
+/* 装订孔：只画在左边，做法跟 .binding i 一样（内凹 + 高光） */
+.m2-hole{
+  position:absolute;left:7px;width:11px;height:11px;border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 50%, var(--milk,#fdfaf6) 0 44%, transparent 46%),
+    radial-gradient(circle at 50% 30%, rgba(150,110,124,.30), transparent 70%);
+  box-shadow:inset 0 1px 2px rgba(150,112,124,.30), 0 1px 0 rgba(255,255,255,.9);
+  pointer-events:none;z-index:2;
+}
+/* 书牌：右下角那枚「APPS · No.25」，像书里的藏书票编号 */
+.m2-plate{
+  position:absolute;left:22px;bottom:9px;z-index:2;
+  display:flex;align-items:baseline;gap:4px;
+  font-family:'Special Elite',ui-monospace,monospace;
+  color:#c2a3ad;opacity:.9;pointer-events:none;
+}
+.m2-plate s{text-decoration:none;font-size:6.5px;letter-spacing:2.2px}
+.m2-plate b{font-size:11px;letter-spacing:1px;color:#c98ba3}
+/* 内层金线：在虚线里再收一道，纸就有了「画框」感 */
+.m2-appsheet--page::after{
+  content:'';position:absolute;inset:4px;border-radius:3px;
+  border:1px solid rgba(216,177,132,.34);
+  pointer-events:none;
+}
+/* 折角：右下角一小块翻起来（跟桌面 .fold 同一个做法） */
+.fold-mark{
+  position:absolute;right:0;bottom:0;width:26px;height:26px;
+  background:linear-gradient(135deg, transparent 50%, #f7e7ec 50%);
+  box-shadow:-2px -2px 4px -2px rgba(150,112,124,.35);
+  border-radius:0 0 5px 0;pointer-events:none;z-index:3;
+}
+
+/* 应用页抬头：跟别的页一个笔法（小英文 + 中文大标 + 说明） */
+.m2-apphead{position:relative;padding:2px 2px 0 5px;margin-bottom:2px}
+.m2-apphead .m2-kick{
+  display:block;font-family:'Special Elite',ui-monospace,monospace;
+  font-size:8px;letter-spacing:3.6px;color:var(--ink3,#b6a5ac);margin-bottom:4px;
+}
+.m2-apphead h2{
+  font-family:'Songti SC','Noto Serif SC',serif;font-weight:600;
+  font-size:24px;letter-spacing:2px;color:var(--ink,#5b4750);line-height:1.2;
+}
+.m2-apphead h2 i{
+  font-style:normal;font-family:'Parisienne','Caveat',cursive;
+  font-size:27px;color:var(--pk6,#ad617e);margin-left:6px;letter-spacing:0;
+}
+.m2-apphead p{
+  margin-top:5px;font-family:'Songti SC','Noto Serif SC',serif;
+  font-size:12px;color:var(--ink2,#8b7680);letter-spacing:.8px;line-height:1.7;
+}
+html[data-mh="phone"] #pg-apps{
+  /* !important：上面 #pg-home/#pg-apps 那条为了翻页胶囊留了 42px，应用页不用，得压掉 */
+  padding:6px calc(46px + env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) 10px!important;
+  /* ★ 不上下翻：一屏装完 25 件 */
+  display:flex!important;flex-direction:column;gap:6px!important;
+  overflow:hidden!important;overscroll-behavior:none;
+}
+html[data-mh="phone"] .m2-apphead{padding:0 2px 0 3px;margin:0}
+html[data-mh="phone"] .m2-apphead .m2-kick{font-size:7px;letter-spacing:2.6px;margin-bottom:2px}
+html[data-mh="phone"] .m2-apphead h2{font-size:19px;letter-spacing:1.6px}
+html[data-mh="phone"] .m2-apphead h2 i{font-size:21px;margin-left:5px}
+html[data-mh="phone"] .m2-apphead p{
+  display:none;   /* 说明那行在手机上收掉，把高度让给网格 */
+}
+/* 纸：占满剩下的高度，网格均分 */
+html[data-mh="phone"] #pg-apps .m2-appsheet{
+  flex:1 1 auto;min-height:0;display:flex;
+  padding:9px 6px 9px 27px;
+}
+html[data-mh="phone"] #pg-apps .m2-margin{left:20px;top:10px;bottom:10px}
+html[data-mh="phone"] #pg-apps .m2-tape-tl{width:78px;height:25px;left:-10px;top:-7px}
+html[data-mh="phone"] #pg-apps .m2-tape-tr{width:52px;height:20px;right:12px;top:-7px}
+html[data-mh="phone"] #pg-apps .m2-plate{left:19px;bottom:8px}
+html[data-mh="phone"] #pg-apps .m2-plate s{font-size:5.8px;letter-spacing:1.8px}
+html[data-mh="phone"] #pg-apps .m2-plate b{font-size:9.5px}
+html[data-mh="phone"] #pg-apps .m2-appgrid{
+  flex:1 1 auto;width:100%;min-height:0;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  /* 行高跟着内容走，再把 5 行均分到整张纸的高度 —— 像手机桌面那样均匀留白 */
+  grid-template-rows:none;
+  grid-auto-rows:min-content;
+  align-content:space-evenly;
+  align-items:center;justify-items:stretch;
+  gap:0;
+}
+html[data-mh="phone"] #pg-apps .cell2{
+  padding:1px 0;gap:0;justify-content:center;
+  min-width:0;overflow:hidden;
+}
+html[data-mh="phone"] #pg-apps .cell2 .art{width:clamp(27px,8.2vw,34px);height:clamp(27px,8.2vw,34px)}
+html[data-mh="phone"] #pg-apps .cell2 .en{
+  font-size:clamp(9.5px,2.9vw,12px);line-height:1.05;letter-spacing:0;
+  max-width:100%;white-space:nowrap;
+}
+html[data-mh="phone"] #pg-apps .cell2 .cn{
+  font-size:clamp(7.6px,2.2vw,9px);line-height:1.1;letter-spacing:0;margin-top:1px;
+  white-space:nowrap;max-width:100%;
+}
+html[data-mh="phone"] #pg-apps .m2-appfoot{
+  flex:0 0 auto;margin:2px 0 0;font-size:6px;letter-spacing:2.2px;
+}
+
+/* 页脚 */
+.m2-appfoot{
+  margin:16px 0 4px;text-align:center;
+  font-family:'Special Elite',monospace;font-size:7px;letter-spacing:3px;
+  color:var(--ink3,#b6a5ac);
+}
+
+
+
+
+/* ============================================================================
+   5. 拍立得相框（只手机）—— 相片位留空，交给用户自己放图
+      做的事：白边更明确、相片凹进去、底唇加编号；画面内容一个字都不动
+   ========================================================================== */
+/* ① 相框本体：三处统一成同一种「即时成像相纸」 */
+html[data-mh="phone"] .sb-instant .slot--special,
+html[data-mh="phone"] .sb-album .g-stack > span,
+html[data-mh="phone"] .sb-gallery .arch{
+  background:
+    linear-gradient(180deg, #fffefc 0%, #fffbf9 58%, #fff6f4 100%);
+  box-shadow:
+    0 1px 2px rgba(150,112,124,.16),
+    0 14px 26px -20px rgba(150,112,124,.8),
+    inset 0 1px 0 rgba(255,255,255,.95);
+}
+/* ② 相片窗口：凹进去一档（内描边 + 内影），换上新图就"嵌"在纸里 */
+html[data-mh="phone"] .sb-instant .ph,
+html[data-mh="phone"] .sb-album .g-stack > span > i,
+html[data-mh="phone"] .sb-gallery .arch .ph{
+  position:relative;border-radius:1px;
+  box-shadow:
+    inset 0 0 0 1px rgba(208,160,180,.72),
+    inset 0 2px 7px rgba(150,112,124,.16),
+    inset 0 -1px 0 rgba(255,255,255,.75);
+}
+/* ③ 底唇编号：相册 No.01 / No.02 / No.03，画廊 I / II / III */
+html[data-mh="phone"] .sb-album .g-stack{counter-reset:m2ph}
+html[data-mh="phone"] .sb-album .g-stack > span{counter-increment:m2ph;padding-bottom:26px!important}
+html[data-mh="phone"] .sb-album .g-stack > span>i{border-radius:1px}
+html[data-mh="phone"] .sb-album .g-stack > span::after{
+  content:'No.0' counter(m2ph);
+  position:absolute;right:8px;bottom:5px;z-index:2;
+  font-family:'Special Elite',ui-monospace,monospace;
+  font-size:7px;letter-spacing:1.6px;color:#c6a7b1;pointer-events:none;
+}
+html[data-mh="phone"] .sb-album .g-stack > span::before{
+  content:'';position:absolute;left:8px;right:8px;bottom:19px;height:1px;pointer-events:none;
+  background:linear-gradient(90deg, rgba(226,182,197,0), rgba(226,182,197,.85), rgba(226,182,197,0));
+}
+html[data-mh="phone"] .sb-gallery .gal{counter-reset:m2arch}
+html[data-mh="phone"] .sb-gallery .arch{counter-increment:m2arch}
+html[data-mh="phone"] .sb-gallery .arch::after{
+  content:'· ' counter(m2arch) ' ·';
+  position:absolute;left:0;right:0;bottom:6px;text-align:center;z-index:2;
+  font-family:'Special Elite',ui-monospace,monospace;
+  font-size:6px;letter-spacing:2px;color:#c6a7b1;pointer-events:none;
+}
+/* ④ 「Us」那张：不再是空相框，改成一枚小相机
+      —— 机身是纸卡，镜头就是相片位（你自己选的图会出现在镜头里） */
+html[data-mh="phone"] .sb-instant .slot--special{
+  position:relative;width:172px;max-width:100%;
+  padding:20px 16px 30px;border-radius:14px;
+  background:linear-gradient(180deg,#fffefc 0%,#fffaf7 62%,#fff4f1 100%);
+  border:1px solid rgba(226,182,197,.62);
+  box-shadow:0 2px 3px rgba(150,112,124,.18), 0 18px 28px -22px rgba(150,112,124,.9);
+}
+/* 取景器（左上小黑窗）+ 快门（右上小圆点） */
+html[data-mh="phone"] .sb-instant .slot--special::before{
+  content:'';position:absolute;left:16px;top:7px;width:26px;height:8px;border-radius:2px;
+  background:#e7c6d3;box-shadow:inset 0 0 0 1px rgba(190,140,160,.55);
+}
+html[data-mh="phone"] .sb-instant .slot--special::after{
+  content:'';position:absolute;right:16px;top:6px;width:10px;height:10px;border-radius:50%;
+  background:radial-gradient(circle at 34% 28%, #ffd9e4, #e08caa 62%, #c9738f);
+  box-shadow:0 1px 2px rgba(150,90,115,.4);
+}
+/* 镜头：相片位 + 一圈镜筒 */
+html[data-mh="phone"] .sb-instant .slot--special .ph{
+  margin:0 auto;width:100%;height:auto;aspect-ratio:1/1;
+  border-radius:8px;
+  font-size:9px!important;letter-spacing:.4px;color:#c9a8b4!important;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  box-shadow:
+    inset 0 0 0 1px rgba(208,160,180,.6),
+    inset 0 2px 8px rgba(150,112,124,.18),
+    0 0 0 4px #fffdfa,
+    0 0 0 6px rgba(214,166,186,.55),
+    0 0 0 7px rgba(255,255,255,.9),
+    0 3px 6px -2px rgba(150,112,124,.35);
+}
+/* 底唇：名字在左、胶片规格在右，都只有一行 */
+html[data-mh="phone"] .sb-instant .slot--special .cap{
+  position:absolute!important;left:16px;bottom:9px;top:auto!important;right:auto;
+  height:auto!important;line-height:1!important;font-size:15px!important;letter-spacing:.4px;
+}
+html[data-mh="phone"] .slot .chg{
+  width:34px!important;height:34px!important;min-width:34px!important;
+  font-size:16px!important;line-height:1!important;
+  right:-8px!important;bottom:-8px!important;
+}
+html[data-mh="phone"] .sb-instant .slot--special .film{
+  position:absolute!important;right:16px;bottom:11px;top:auto!important;left:auto;
+  text-align:right;white-space:nowrap;
+  font-size:5.6px!important;letter-spacing:1.1px;line-height:1!important;color:#bfa0ac!important;
+}
+/* 换图钮贴在机身右上（快门下面一点），不压镜头 */
+html[data-mh="phone"] .sb-instant .slot--special .chg{
+  top:34px!important;right:-8px!important;left:auto!important;bottom:auto!important;z-index:4;
+  width:24px!important;height:24px!important;
+}
+html[data-mh="phone"] .sb-instant .slot--special .tape{width:64px;height:18px;left:50%;margin-left:-32px;top:-10px}
+
+/* ⑤ 相册三张：轻微错开的角度已经由原来的写法给，这里只补一点统一的手感 */
+html[data-mh="phone"] .sb-album .g-stack > span,
+html[data-mh="phone"] .sb-gallery .arch{
+  transition:transform 200ms cubic-bezier(.23,1,.32,1);
+}
+html[data-mh="phone"] .sb-album .g-stack > span:active,
+html[data-mh="phone"] .sb-gallery .arch:active{transform:scale(.985)}
+
+
+
+/* 小相机左右：用素材库里现成的水彩插画（不用手绘线条） */
+html[data-mh="phone"] .sb-instant .sb-content{position:relative}
+html[data-mh="phone"] .sb-instant .sb-content::before,
+html[data-mh="phone"] .sb-instant .sb-content::after{
+  content:'';position:absolute;z-index:0;pointer-events:none;
+  background-repeat:no-repeat;background-position:center;background-size:contain;
+  /* 调淡：降饱和 + 提亮 + 一点透明度，像素图才不会比纸还抢眼 */
+  filter:drop-shadow(0 3px 6px rgba(150,112,124,.12)) saturate(.52) brightness(1.07) contrast(.9);
+  opacity:.82;
+}
+html[data-mh="phone"] .sb-instant .sb-content::before{
+  left:-74px;top:34%;width:70px;height:74px;
+  background-image:url("aset/paper/melody2.png");
+  transform:rotate(-7deg);
+}
+html[data-mh="phone"] .sb-instant .sb-content::after{
+  right:-74px;top:32%;width:62px;height:82px;
+  background-image:url("aset/paper/melody3.png");
+  transform:rotate(7deg);
+}
+html[data-mh="phone"] .sb-instant .slots{position:relative;z-index:2}
+
+
+
+/* MCP 那格右侧贴一只小猫（像素贴图，手机） */
+html[data-mh="phone"] .sb-desktools .jh-desk-tools-row > .jh-dtool:nth-child(3)::before{
+  content:'';position:absolute;right:-104px;top:50%;width:62px;height:62px;z-index:3;
+  margin-top:-31px;pointer-events:none;transform:rotate(-8deg);
+  background:url("aset/paper/melody8.png") center/contain no-repeat;
+  filter:saturate(.6) brightness(1.05) drop-shadow(0 2px 4px rgba(150,112,124,.22));
+  opacity:.95;
+}
+
+/* MCP 那格旁边一颗小星星（手机） */
+html[data-mh="phone"] .sb-desktools .jh-desk-tools-row > .jh-dtool{position:relative}
+html[data-mh="phone"] .sb-desktools .jh-desk-tools-row > .jh-dtool:nth-child(3)::after{
+  content:'';position:absolute;right:-8px;top:-9px;width:15px;height:15px;z-index:3;
+  pointer-events:none;transform:rotate(9deg);
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.4l1.9 6.1 6.1 1.9-6.1 1.9L12 18.4l-1.9-6.1L4 10.4l6.1-1.9z' fill='%23f2d6a8' stroke='%23cfa66a' stroke-width='1.1' stroke-linejoin='round'/%3E%3Ccircle cx='19.4' cy='18.6' r='1.5' fill='%23f6e2bd' stroke='%23d7b077' stroke-width='.9'/%3E%3C/svg%3E") center/contain no-repeat;
+  filter:drop-shadow(0 1px 2px rgba(150,112,124,.25));
+  animation:m2-twinkle 3.6s ease-in-out infinite;
+}
+@keyframes m2-twinkle{0%,100%{opacity:.9;transform:rotate(9deg) scale(1)}50%{opacity:1;transform:rotate(9deg) scale(1.12)}}
+@media (prefers-reduced-motion: reduce){
+  html[data-mh="phone"] .sb-desktools .jh-desk-tools-row > .jh-dtool:nth-child(3)::after{animation:none}
+}
+
+
+/* 拍立得旁边的可编辑气泡（手机） */
+html[data-mh="phone"] .sb-instant{position:relative;z-index:6}
+html[data-mh="phone"] .m2-bub{
+  /* 放到相机上方的空白带里，尾巴朝下指着相机 —— 不压下面的相册 */
+  /* 卡在「三格工具」和相机之间的那条空白带里，一行高就够，谁的边都不压 */
+  position:absolute;left:-70px;bottom:auto;top:-18px;width:146px;min-height:0;z-index:9;
+  padding:5px 12px 6px;border-radius:13px 13px 13px 4px;
+  background:linear-gradient(170deg,#fffefc,#fff8f6);
+  border:1px solid rgba(226,182,197,.75);
+  box-shadow:0 2px 3px rgba(150,112,124,.14), 0 12px 20px -16px rgba(150,112,124,.7);
+  font-family:'Caveat','Parisienne',cursive;font-size:14.5px;line-height:1.2;
+  color:#8a5a6e;letter-spacing:.4px;text-align:left;
+  outline:none;cursor:text;word-break:break-word;
+}
+/* 小尾巴：朝下指着相机 */
+html[data-mh="phone"] .m2-bub::before{
+  content:'';position:absolute;right:22px;bottom:-7px;width:14px;height:14px;
+  background:linear-gradient(170deg,#fff8f6,#fff6f4);
+  border-right:1px solid rgba(226,182,197,.75);
+  border-bottom:1px solid rgba(226,182,197,.75);
+  transform:rotate(45deg);border-radius:0 0 3px 0;
+}
+/* 空的时候显示提示字 */
+html[data-mh="phone"] .m2-bub:empty::after{
+  content:attr(data-ph);color:#cbb2bc;font-size:15px;
+}
+html[data-mh="phone"] .m2-bub:focus{
+  border-color:rgba(204,125,155,.9);
+  box-shadow:0 0 0 3px rgba(238,188,204,.35), 0 12px 20px -16px rgba(150,112,124,.7);
+}
+
+
+/* ============================================================================
+   3. 丝带上的第 4 枚书签（沿用 .ribbon button，只多点安全区）
+   ========================================================================== */
+html[data-mh="phone"] .ribbon{top:calc(66px + env(safe-area-inset-top,0px));gap:7px}
+html[data-mh="phone"] .ribbon button{width:38px;padding:11px 0 9px}
+html[data-mh="phone"] .ribbon button .bk{font-size:11.4px;letter-spacing:2px}
+html[data-mh="phone"] .ribbon button .ic{width:14px;height:14px}
+.ribbon button.m2-bk-apps{position:relative}
+/* 应用那枚：右上角挂一颗小圆点，和「当前页」的抽出一截区分开 */
+.ribbon button.m2-bk-apps::before{
+  content:'';position:absolute;right:6px;top:6px;width:4px;height:4px;border-radius:50%;
+  background:var(--pk4,#e09cb5);opacity:.75;
+}
+
+
+/* ============================================================================
+   8. 首页那五张卡（Chat / Whisper / Music / Games / Persona）
+      —— 只手机。这一轮要解决的是「卡片单薄、上头没啥东西」。
+
+      共同底子（五张一样，跟全书同一张纸）：
+        顶光 + 近距离硬影 + 远处软影（纸有厚度）
+        58° 细纹（纸纤维） · 一圈金色细线 · 一枚很小的编号牌
+      各自的「纸边语言」（形态不互相抄）：
+        Chat     双道缝线 + 撕下来的尾巴
+        Whisper  三张叠票（第三张在后面露角）+ 右上打孔
+        Music    齿孔票根（左边一道虚齿隔开唱片）+ 内金线
+        Games    右下折角 + 底边缝线
+        Persona  索引卡（横线纸 + 左栏红线 + 回形针 + 撕纸齿）
+
+      内容一律可读可点，不再用「—」占位撑场面。
+   ========================================================================== */
+html[data-mh="phone"] .sb-chat .g-bubble,
+html[data-mh="phone"] .sb-private .g-notes,
+html[data-mh="phone"] .sb-music .g-pill,
+html[data-mh="phone"] .sb-games .g-die,
+html[data-mh="phone"] .sb-persona .g-index{
+  position:relative;
+  box-sizing:border-box;
+  background-color:#fffdf9;
+  background-image:
+    radial-gradient(150% 110% at 4% -14%, rgba(255,255,255,.96), rgba(255,255,255,0) 58%),
+    repeating-linear-gradient(58deg, rgba(206,150,170,.055) 0 1px, rgba(255,255,255,0) 1px 3.4px),
+    linear-gradient(160deg, #fffefd 0%, #fffbf8 56%, #fdf3f5 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.96),
+    inset 0 -1px 0 rgba(238,188,204,.32),
+    inset 0 0 0 3px rgba(255,255,255,.42),
+    inset 0 0 0 4px rgba(224,192,150,.42),
+    2px 3px 0 rgba(163,124,137,.11),
+    0 15px 26px -21px rgba(150,112,124,.95);
+  color:var(--ink);
+}
+/* 编号牌 */
+html[data-mh="phone"] .m2c-plate{
+  position:absolute;z-index:3;pointer-events:none;
+  padding:1px 4px;border-radius:2px;
+  font-family:'Special Elite',ui-monospace,monospace;
+  font-size:6.2px;letter-spacing:1.6px;color:#c9aab4;
+  background:linear-gradient(180deg,#fffdfb,#fdf7f6);
+  box-shadow:0 0 0 1px rgba(255,255,255,.55);
+}
+/* 装饰层（每张卡一个）：不接事件，只画线；:before/:after 各卡自己用 */
+html[data-mh="phone"] .sb-chat .g-bubble > .m2c-orn,
+html[data-mh="phone"] .sb-private .g-notes > .m2c-orn,
+html[data-mh="phone"] .sb-music .g-pill > .m2c-orn,
+html[data-mh="phone"] .sb-games .g-die > .m2c-orn,
+html[data-mh="phone"] .sb-persona .g-index > .m2c-orn{
+  position:absolute;z-index:1;pointer-events:none;
+}
+/* 内容压在装饰下面一层之上（装饰层 :not() 排除掉，别把它们的 absolute 也顶掉） */
+html[data-mh="phone"] .sb-chat .g-bubble > :not(.m2c-orn):not(.m2c-plate):not(.m2c-tape),
+html[data-mh="phone"] .sb-private .g-notes > :not(.m2c-orn):not(.m2c-plate):not(.m2c-tape),
+html[data-mh="phone"] .sb-music .g-pill > :not(.m2c-orn):not(.m2c-plate):not(.m2c-tape),
+html[data-mh="phone"] .sb-games .g-die > :not(.m2c-orn):not(.m2c-plate):not(.m2c-tape),
+html[data-mh="phone"] .sb-persona .g-index > :not(.m2c-orn):not(.m2c-plate):not(.m2c-tape){position:relative;z-index:2}
+
+/* 小字：等宽英文/数字，跟页脚同一套 */
+html[data-mh="phone"] .m2c-mono{
+  font-family:'Special Elite',ui-monospace,monospace;
+  font-weight:400;font-style:normal;letter-spacing:1.2px;
+}
+
+/* ---------------------------------------------------------------- ① Chat */
+html[data-mh="phone"] .sb-chat .g-bubble{
+  display:flex;flex-direction:column;align-items:flex-start;gap:5px;
+  padding:14px 15px 12px;
+  border:1px solid #eebccc;
+  border-radius:20px 20px 20px 7px;
+}
+/* 尾巴：还是原来那个尾巴（左边缘接上皮线），只把纸色对齐这张卡 */
+html[data-mh="phone"] .sb-chat .g-bubble::after{
+  left:21px;bottom:-15px;width:26px;height:16px;
+  background:linear-gradient(152deg,#fdf5f5,#fdf2f4);
+  border-left:1.4px solid #eebccc;
+  clip-path:polygon(0 0,100% 0,0 100%);
+  border-radius:0;
+  transform:none;
+}
+/* 双道缝线 */
+html[data-mh="phone"] .sb-chat .g-bubble > .m2c-orn{
+  inset:5px;border-radius:15px 15px 15px 4px;
+  border:1px dashed rgba(224,156,181,.85);
+}
+html[data-mh="phone"] .sb-chat .g-bubble > .m2c-orn::before{
+  content:'';position:absolute;inset:3.5px;
+  border-radius:12px 12px 12px 3px;
+  box-shadow:inset 0 0 0 1px rgba(224,192,150,.5);
+}
+/* 左上角一枚「穿线钉」：缝线的起点 */
+html[data-mh="phone"] .sb-chat .g-bubble > .m2c-orn::after{
+  content:'';position:absolute;left:5px;top:5px;width:3.5px;height:3.5px;border-radius:50%;
+  background:rgba(204,125,155,.65);
+  box-shadow:0 0 0 2px rgba(255,255,255,.9), 0 0 0 2.8px rgba(238,188,204,.55);
+}
+html[data-mh="phone"] .sb-chat .g-bubble .en{line-height:1.04}
+html[data-mh="phone"] .sb-private .g-notes .en{line-height:1.04}
+/* 最新一条 */
+html[data-mh="phone"] .sb-chat .m2c-last{
+  display:flex;align-items:center;gap:6px;width:100%;margin-top:2px;min-width:0;
+  font-family:var(--cn);font-size:12.2px;line-height:1.5;color:#6a4a58;
+}
+html[data-mh="phone"] .sb-chat .m2c-last s{
+  flex:0 0 auto;text-decoration:none;font-size:8.6px;letter-spacing:.6px;color:#b3708a;
+  border:1px solid rgba(238,188,204,.95);border-radius:999px;padding:0 4px;
+  background:rgba(255,255,255,.65);
+}
+html[data-mh="phone"] .sb-chat .m2c-last em{
+  flex:1 1 auto;min-width:0;font-style:normal;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+/* 「你」那一行：标签换成金色，跟「她」分开 */
+html[data-mh="phone"] .sb-chat .m2c-last--me s{background:rgba(224,192,150,.55);color:#9c7c46;border-color:rgba(224,192,150,.9)}
+html[data-mh="phone"] .sb-chat .m2c-last--me em{color:#8b7680}
+html[data-mh="phone"] .sb-chat .m2c-last b{
+  flex:0 0 auto;font-weight:400;font-size:7.2px;color:#c8aab4;
+  font-family:'Special Elite',ui-monospace,monospace;letter-spacing:1px;
+}
+/* 底下那一条：真数据在左、未读在右，中间一条细线 */
+html[data-mh="phone"] .sb-chat .m2c-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+  margin-top:4px;padding-top:6px;
+  border-top:1px solid rgba(238,188,204,.6);
+}
+html[data-mh="phone"] .sb-chat .m2c-bar .cnt{margin-top:0!important;font-size:6.6px!important;letter-spacing:1.2px!important}
+html[data-mh="phone"] .m2c-unread{
+  display:inline-flex;align-items:center;gap:4px;flex:0 0 auto;
+  font-family:var(--cn);font-size:8.4px;letter-spacing:.4px;color:#a9607c;
+  padding:2px 6px 2px 5px;border-radius:999px;
+  background:linear-gradient(180deg,#fffafb,#fdf1f5);
+  box-shadow:inset 0 0 0 1px rgba(238,188,204,.9);
+}
+html[data-mh="phone"] .m2c-unread i{
+  width:4px;height:4px;border-radius:50%;background:#e09cb5;
+  box-shadow:0 0 0 2px rgba(238,188,204,.28);
+}
+
+/* 和纸胶带（.tape 原零件）：只给两张卡各贴一条，别满页都是 */
+html[data-mh="phone"] .m2c-tape{
+  position:absolute;z-index:4;top:-8px;width:52px;height:17px;
+  transform:rotate(-3.4deg);
+}
+html[data-mh="phone"] .sb-music .m2c-tape{left:74px;top:-8px;transform:rotate(-4deg)}
+
+/* ------------------------------------------------------------- ② Whisper */
+html[data-mh="phone"] .sb-private .g-notes{
+  display:flex;flex-direction:column;align-items:flex-start;gap:3px;
+  padding:14px 15px 12px;
+  border:1px solid #eebccc;
+  border-radius:9px;
+}
+/* 第二张不要了：转着的纸边会穿到正面来。叠票改用实心错位投影（见下） */
+html[data-mh="phone"] .sb-private .g-notes::before{content:none}
+/* 叠票：两张错开的实心投影，右下方各露一条边（不用转，边不会穿到正面） */
+html[data-mh="phone"] .sb-private .g-notes{
+  box-shadow:
+    4px 5px 0 -1px #fffdf9,
+    4px 5px 0 0 rgba(238,188,204,.95),
+    9px 11px 0 -1px #fdf8f3,
+    9px 11px 0 0 rgba(238,188,204,.78),
+    inset 0 1px 0 rgba(255,255,255,.96),
+    inset 0 -1px 0 rgba(238,188,204,.32),
+    inset 0 0 0 3px rgba(255,255,255,.42),
+    inset 0 0 0 4px rgba(224,192,150,.42),
+    2px 3px 0 rgba(163,124,137,.11),
+    0 15px 26px -21px rgba(150,112,124,.95);
+}
+/* 不画内框（那是 Chat 的缝线语言）；这张只靠「叠三张 + 打孔 + 底边金线」 */
+html[data-mh="phone"] .sb-private .g-notes > .m2c-orn{
+  inset:0;border-radius:9px;
+}
+html[data-mh="phone"] .sb-private .g-notes > .m2c-orn::before{
+  content:'';position:absolute;right:8px;top:-1px;width:9px;height:9px;border-radius:50%;
+  background:var(--milk,#fdfaf6);
+  box-shadow:inset 0 1px 2px rgba(150,110,124,.45), 0 0 0 1px rgba(238,188,204,.7);
+}
+html[data-mh="phone"] .sb-private .g-notes > .m2c-orn::after{
+  content:'';position:absolute;left:12px;right:12px;bottom:10px;height:1px;
+  background:repeating-linear-gradient(90deg, rgba(224,192,150,.85) 0 4px, rgba(255,255,255,0) 4px 8px);
+  opacity:.8;
+}
+/* 两条悄悄话，一人一条 */
+html[data-mh="phone"] .sb-private .m2c-wh{
+  display:flex;align-items:center;gap:6px;width:100%;min-width:0;
+  font-family:var(--cn);font-size:11.6px;line-height:1.7;color:#6a4a58;
+}
+html[data-mh="phone"] .sb-private .m2c-wh s{
+  flex:0 0 auto;text-decoration:none;font-size:8.2px;letter-spacing:0;color:#b3708a;
+  width:14px;height:14px;line-height:14px;text-align:center;border-radius:3px;
+  background:rgba(238,188,204,.45);
+}
+html[data-mh="phone"] .sb-private .m2c-wh em{
+  font-style:normal;flex:1 1 auto;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#7a5a68;
+}
+html[data-mh="phone"] .sb-private .m2c-wh--me s{background:rgba(224,192,150,.6);color:#9c7c46}
+html[data-mh="phone"] .sb-private .m2c-wh--me em{color:#8b7680}
+
+/* --------------------------------------------------------------- ③ Music */
+html[data-mh="phone"] .sb-music .g-pill{
+  padding:12px 14px;gap:12px;align-items:center;
+  border:1px solid #eebccc;border-radius:20px;
+}
+/* 齿孔票根：左边一道虚齿把唱片隔开 */
+html[data-mh="phone"] .sb-music .g-pill > .m2c-orn{inset:4px;border-radius:16px}
+html[data-mh="phone"] .sb-music .g-pill > .m2c-orn::before{
+  content:'';position:absolute;left:64px;top:8px;bottom:8px;width:0;
+  border-left:1px dashed rgba(224,156,181,.9);
+}
+html[data-mh="phone"] .sb-music .g-pill > .m2c-orn::after{
+  content:'';position:absolute;inset:2px;border-radius:14px;
+  box-shadow:inset 0 0 0 1px rgba(224,192,150,.45);
+}
+html[data-mh="phone"] .sb-music .g-pill .art{
+  width:46px;height:46px;
+  filter:drop-shadow(0 1px 1px rgba(150,112,124,.25));
+}
+html[data-mh="phone"] .sb-music .g-pill .en{font-size:25px!important;line-height:1.05}
+html[data-mh="phone"] .sb-music .g-pill .cn{font-size:10.4px!important;color:#8b7680!important;margin-top:1px}
+html[data-mh="phone"] .sb-music .m2c-tk{
+  display:flex;align-items:baseline;gap:5px;width:100%;margin-top:3px;min-width:0;
+  font-family:var(--cn);font-size:10.6px;color:#7a5a68;letter-spacing:.2px;
+}
+html[data-mh="phone"] .sb-music .m2c-tk s{text-decoration:none;color:#bd93a3;font-size:8px;letter-spacing:1px}
+html[data-mh="phone"] .sb-music .m2c-tk em{font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html[data-mh="phone"] .sb-music .g-pill .bar2{
+  height:4px!important;margin-top:6px!important;
+  background:rgba(238,188,204,.42)!important;
+  box-shadow:inset 0 1px 1px rgba(150,112,124,.18);
+}
+html[data-mh="phone"] .sb-music .g-pill .bar2 i{
+  background:linear-gradient(90deg,#f3cbda,#e09cb5 70%,#cc7d9b)!important;
+}
+html[data-mh="phone"] .sb-music .m2c-time{
+  display:flex;justify-content:space-between;width:100%;margin-top:2px;
+  font-family:'Special Elite',ui-monospace,monospace;font-size:6.6px;letter-spacing:1.2px;color:#c8aab4;
+}
+/* 播放键 */
+html[data-mh="phone"] .sb-music .m2c-play{
+  flex:0 0 auto;width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#fffdfb,#fdf2f5);
+  box-shadow:
+    inset 0 0 0 1px rgba(238,188,204,.95),
+    inset 0 1px 0 rgba(255,255,255,.9),
+    0 2px 4px -2px rgba(150,112,124,.55);
+}
+html[data-mh="phone"] .sb-music .m2c-play::before{
+  content:'';display:block;margin-left:3px;width:0;height:0;
+  border-left:7.5px solid #cc7d9b;border-top:4.8px solid transparent;border-bottom:4.8px solid transparent;
+}
+
+/* --------------------------------------------------------------- ④ Games */
+/* 这一格在手册里被限过宽（maxw.games:190），加了战绩三格之后必须撑满整栏，
+   否则会缩成 139px 的细条。选择器要比文档里那条 width:auto!important 更具体。 */
+html[data-mh="phone"].scrapbook .sb-region.sb-games{
+  width:100%!important;max-width:none!important;align-self:stretch!important;
+  rotate:-.6deg!important;
+}
+
+html[data-mh="phone"] .sb-games .g-die{
+  width:100%;height:auto;min-height:0;aspect-ratio:auto;
+  text-align:left;
+  display:grid;grid-template-columns:40px minmax(0,1fr);
+  column-gap:10px;row-gap:0;align-items:start;
+  padding:13px 15px 12px;
+  border:1px solid #eebccc;border-radius:18px;
+  rotate:0deg;
+  overflow:visible;
+}
+html[data-mh="phone"] .sb-games .g-die .art{
+  grid-column:1;grid-row:1 / span 2;align-self:start;margin-top:2px;
+}
+html[data-mh="phone"] .sb-games .g-die .en{grid-column:2;grid-row:1}
+html[data-mh="phone"] .sb-games .g-die .cn{grid-column:2;grid-row:2}
+html[data-mh="phone"] .sb-games .m2c-stats{grid-column:1 / -1;grid-row:3}
+html[data-mh="phone"] .sb-games .m2c-play2{grid-column:1 / -1;grid-row:4;justify-self:end}
+/* 右下折角 + 底边缝线 */
+html[data-mh="phone"] .sb-games .g-die > .m2c-orn{inset:0;border-radius:18px;overflow:hidden}
+html[data-mh="phone"] .sb-games .g-die > .m2c-orn::after{
+  content:'';position:absolute;right:0;bottom:0;width:19px;height:19px;
+  background:linear-gradient(135deg, rgba(253,244,245,0) 47%, #f8e3ea 47%, #fdf9fa 100%);
+  border-radius:0 0 17px 0;
+  box-shadow:-1.5px -1.5px 3px -1px rgba(150,112,124,.35);
+}
+html[data-mh="phone"] .sb-games .g-die > .m2c-orn::before{
+  content:'';position:absolute;left:15px;bottom:9px;width:64px;height:0;
+  border-top:1px dashed rgba(224,156,181,.75);
+}
+html[data-mh="phone"] .sb-games .g-die .art{width:40px;height:40px}
+html[data-mh="phone"] .sb-games .g-die .en{font-size:25px!important;line-height:1.1;margin-top:2px}
+html[data-mh="phone"] .sb-games .g-die .cn{font-size:10.6px!important;color:#8b7680!important}
+/* 三格战绩 */
+html[data-mh="phone"] .sb-games .m2c-stats{
+  display:flex;width:100%;gap:0;margin:9px 0 7px;
+  border-top:1px solid rgba(238,188,204,.55);
+  border-bottom:1px solid rgba(238,188,204,.55);
+}
+html[data-mh="phone"] .sb-games .m2c-st{
+  flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:1px;
+  padding:5px 2px 4px;
+}
+html[data-mh="phone"] .sb-games .m2c-st + .m2c-st{border-left:1px dotted rgba(238,188,204,.9)}
+html[data-mh="phone"] .sb-games .m2c-st s{
+  text-decoration:none;font-family:var(--cn);font-size:8px;letter-spacing:1.2px;color:#b58f9d;
+}
+html[data-mh="phone"] .sb-games .m2c-st b{
+  font-weight:400;font-family:'Special Elite',ui-monospace,monospace;
+  font-size:13px;letter-spacing:.6px;color:#8b6b7a;
+}
+/* PLAY */
+html[data-mh="phone"] .sb-games .m2c-play2{
+  align-self:flex-end;display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px 3px 8px;border-radius:999px;
+  font-family:'Special Elite',ui-monospace,monospace;font-size:7px;letter-spacing:1.8px;color:#a9607c;
+  background:linear-gradient(180deg,#fffafb,#fdf0f4);
+  box-shadow:inset 0 0 0 1px rgba(238,188,204,.95), 0 1px 2px rgba(150,112,124,.14);
+}
+html[data-mh="phone"] .sb-games .m2c-play2::after{
+  content:'';width:0;height:0;
+  border-left:4.5px solid #cc7d9b;border-top:3px solid transparent;border-bottom:3px solid transparent;
+}
+
+/* ------------------------------------------------------------- ⑤ Persona */
+html[data-mh="phone"] .sb-persona .g-index{
+  display:grid;
+  grid-template-columns:32px minmax(0,1fr);
+  column-gap:10px;row-gap:0;
+  align-items:start;
+  padding:12px 14px 11px;
+  border:1px solid #eebccc;border-radius:5px;
+  background-color:#fffdf9;
+  background-image:
+    radial-gradient(150% 110% at 4% -16%, rgba(255,255,255,.96), rgba(255,255,255,0) 58%),
+    linear-gradient(160deg, #fffefd 0%, #fffbf8 60%, #fdf4f4 100%);
+}
+html[data-mh="phone"] .sb-persona .g-index .art{
+  position:static!important;left:auto!important;top:auto!important;
+  grid-column:1;grid-row:1 / span 2;align-self:start;
+  width:32px!important;height:32px!important;margin-top:4px;
+}
+html[data-mh="phone"] .sb-persona .g-index .en{
+  grid-column:2;grid-row:1;font-size:24px!important;line-height:1.15;
+}
+html[data-mh="phone"] .sb-persona .g-index .cn{grid-column:2;grid-row:2;font-size:10.6px!important;color:#8b7680!important}
+/* 左栏红线 + 右上回形针 */
+html[data-mh="phone"] .sb-persona .g-index > .m2c-orn{inset:0;border-radius:4px}
+html[data-mh="phone"] .sb-persona .g-index > .m2c-orn::before{
+  content:'';position:absolute;left:8px;top:3px;bottom:3px;width:0;
+  border-left:1px solid rgba(224,156,181,.55);
+}
+html[data-mh="phone"] .sb-persona .g-index > .m2c-orn::after{
+  content:'';position:absolute;right:13px;top:-6px;width:9px;height:21px;
+  border:1.5px solid rgba(196,178,188,.9);border-bottom-color:transparent;
+  border-radius:6px 6px 3px 3px;
+  rotate:11deg;
+  box-shadow:inset 0 0 0 1.4px rgba(255,255,255,.75);
+}
+/* 三行字段：标签 / 值 / 小进度 / 百分数 */
+html[data-mh="phone"] .sb-persona .m2c-fields{
+  grid-column:1 / -1;grid-row:3;
+  display:flex;flex-direction:column;gap:0;width:100%;margin-top:6px;
+}
+html[data-mh="phone"] .sb-persona .m2c-f{
+  display:flex;align-items:center;gap:8px;width:100%;min-width:0;
+  height:19px;
+  font-family:var(--cn);font-size:11.4px;color:#6a4a58;
+  /* 行底一条淡淡的手账横线：跟横线纸一个意思，但正好压在行底 */
+  box-shadow:inset 0 -1px 0 rgba(238,188,204,.5);
+}
+html[data-mh="phone"] .sb-persona .m2c-f s{
+  flex:0 0 38px;text-decoration:none;
+  font-family:var(--cn);font-size:8.6px;letter-spacing:1.2px;color:#b58f9d;
+}
+html[data-mh="phone"] .sb-persona .m2c-f b{
+  flex:0 0 auto;font-weight:400;color:#7a5a68;letter-spacing:.3px;
+}
+html[data-mh="phone"] .sb-persona .m2c-f i{
+  flex:1 1 auto;height:3px;border-radius:99px;position:relative;overflow:hidden;
+  background:rgba(238,188,204,.4);
+  box-shadow:inset 0 1px 1px rgba(150,112,124,.16);
+}
+html[data-mh="phone"] .sb-persona .m2c-f i u{
+  position:absolute;left:0;top:0;bottom:0;width:var(--v,60%);
+  background:linear-gradient(90deg,#f6d6e1,#e09cb5);
+  border-radius:99px;text-decoration:none;
+}
+html[data-mh="phone"] .sb-persona .m2c-f em{
+  flex:0 0 auto;font-style:normal;
+  font-family:'Special Elite',ui-monospace,monospace;font-size:6.6px;letter-spacing:1px;color:#c8aab4;
+}
+/* 上缘撕纸齿 */
+html[data-mh="phone"] .sb-persona .g-index::after{
+  content:'';position:absolute;left:2px;right:2px;top:0;height:4px;
+  background:#fffdf9;
+  -webkit-mask-image:repeating-linear-gradient(90deg,#000 0 5px,transparent 5px 9px);
+          mask-image:repeating-linear-gradient(90deg,#000 0 5px,transparent 5px 9px);
+  z-index:4;pointer-events:none;
+}
+
+/* ============================================================================
+   9. 第 2 屏：掌机 → 登机牌（Boarding pass）· 只手机
+
+      照着用户给的那张登机牌做：白纸票面 + 粉细线 + 虚线撕口 + 票根 + 条形码。
+      颜色只用书里现成的：--sheet 纸 / --pk0~--pk6 粉 / --ink 墨 / --milk 页底，
+      没有一条是我新调出来的色号。
+
+      结构（JS 建，见 m2-apps.js → ticket2()）：
+        .m2t
+          .m2t-body   票面：胶囊+提示 / 照片 / FROM→TO / FLIGHT·DATE·GATE·SEAT / 感谢语
+          .m2t-stub   票根：ECONOMY / PASSENGER / BOARDING / 条形码 / 2A
+      照片还是原来那个 .ph（点它换图），被搬进票面的照片位里。
+   ========================================================================== */
+html[data-mh="phone"] .sb-gameboy .slot--gb{
+  width:250px!important;max-width:100%!important;
+  margin:0 auto!important;margin-inline:auto!important;
+  padding:0 0 20px!important;
+  background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+  rotate:-.8deg!important;
+  align-self:center!important;
+}
+html[data-mh="phone"] .sb-gameboy .gbart,
+html[data-mh="phone"] .sb-gameboy .slot--gb.jh-natural-photo .gbart{display:none!important}
+
+/* 票：白纸 + 粉细线 + 硬影 */
+html[data-mh="phone"] .sb-gameboy .m2t,
+html[data-mh="phone"] .sb-gameboy .slot--gb.jh-natural-photo .m2t{
+  position:relative;display:flex;align-items:stretch;
+  width:100%;box-sizing:border-box;
+  border-radius:9px;
+  background-color:var(--sheet,#fffdf9);
+  background-image:none;
+  box-shadow:
+    inset 0 0 0 1px var(--pk3,#eebccc),
+    2px 3px 0 rgba(163,124,137,.12),
+    0 14px 24px -20px rgba(150,112,124,.75);
+  overflow:visible;
+}
+/* 票面 */
+html[data-mh="phone"] .sb-gameboy .m2t-body{
+  flex:1 1 auto;min-width:0;box-sizing:border-box;
+  padding:9px 11px 9px;
+  display:flex;flex-direction:column;gap:0;
+}
+/* 顶部：boarding pass 胶囊 + 右边一句 */
+html[data-mh="phone"] .sb-gameboy .m2t-top{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+}
+html[data-mh="phone"] .sb-gameboy .m2t-pill{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 8px 2px 7px;border-radius:999px;
+  background:var(--pk1,#fbe8ee);
+  box-shadow:inset 0 0 0 1px rgba(238,188,204,.9);
+  font-family:'Special Elite',ui-monospace,monospace;
+  font-size:6.6px;letter-spacing:1.1px;color:var(--pk5,#cc7d9b);
+  white-space:nowrap;
+}
+html[data-mh="phone"] .sb-gameboy .m2t-pill i{font-style:normal;font-size:7px}
+html[data-mh="phone"] .sb-gameboy .m2t-hint{
+  font-family:'Special Elite',ui-monospace,monospace;
+  font-size:6px;letter-spacing:.9px;color:var(--pk3,#eebccc);
+  white-space:nowrap;
+}
+/* 照片位（.ph 会搬进来） */
+html[data-mh="phone"] .sb-gameboy .m2t-photo{
+  margin:8px 0 7px;position:relative;
+}
+/* FROM → TO */
+html[data-mh="phone"] .sb-gameboy .m2t-route{
+  display:flex;align-items:flex-end;gap:6px;
+  padding:0 1px 6px;
+  border-bottom:1px solid rgba(238,188,204,.75);
+}
+html[data-mh="phone"] .sb-gameboy .m2t-ap{display:flex;flex-direction:column;gap:1px;min-width:0}
+html[data-mh="phone"] .sb-gameboy .m2t-ap s{
+  text-decoration:none;font-family:'Special Elite',ui-monospace,monospace;
+  font-size:5px;letter-spacing:1.4px;color:var(--pk3,#eebccc);
+}
+html[data-mh="phone"] .sb-gameboy .m2t-ap b{
+  font-family:'Special Elite',ui-monospace,monospace;font-weight:400;
+  font-size:14px;letter-spacing:1.6px;color:var(--ink2,#8b7680);line-height:1;
+}
+html[data-mh="phone"] .sb-gameboy .m2t-ap--r{align-items:flex-end;text-align:right}
+html[data-mh="phone"] .sb-gameboy .m2t-line{
+  flex:1 1 auto;min-width:0;height:9px;position:relative;margin-bottom:3px;
+  background-image:repeating-linear-gradient(90deg, rgba(224,156,181,.85) 0 3px, rgba(255,255,255,0) 3px 7px);
+  background-position:0 4px;background-size:auto 1px;background-repeat:repeat-x;
+}
+html[data-mh="phone"] .sb-gameboy .m2t-line i{
+  position:absolute;left:50%;top:0;transform:translateX(-50%);
+  font-style:normal;font-size:8px;color:var(--pk4,#e09cb5);line-height:1;
+  padding:0 4px;background:var(--sheet,#fffdf9);
+}
+/* 四格字段 */
+html[data-mh="phone"] .sb-gameboy .m2t-fields{
+  display:flex;align-items:flex-start;gap:0;
+  padding:6px 0 5px;
+  border-bottom:1px solid rgba(238,188,204,.55);
+}
+html[data-mh="phone"] .sb-gameboy .m2t-f{
+  flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:1px;
+  padding:0 5px;
+}
+html[data-mh="phone"] .sb-gameboy .m2t-f:first-child{padding-left:1px}
+html[data-mh="phone"] .sb-gameboy .m2t-f + .m2t-f{border-left:1px dotted rgba(238,188,204,.9)}
+html[data-mh="phone"] .sb-gameboy .m2t-f s{
+  text-decoration:none;font-family:'Special Elite',ui-monospace,monospace;
+  font-size:4.8px;letter-spacing:1.2px;color:var(--pk3,#eebccc);
+}
+html[data-mh="phone"] .sb-gameboy .m2t-f b{
+  font-family:'Special Elite',ui-monospace,monospace;font-weight:400;
+  font-size:7.6px;letter-spacing:.8px;color:var(--ink2,#8b7680);white-space:nowrap;
+}
+/* 底部感谢语 */
+html[data-mh="phone"] .sb-gameboy .m2t-foot{
+  padding-top:5px;text-align:center;
+  font-family:'Special Elite',ui-monospace,monospace;
+  font-size:5px;letter-spacing:1.4px;color:var(--pk3,#eebccc);
+  white-space:nowrap;overflow:hidden;
+}
+/* 票根：虚线撕口 + 上下两个缺口 */
+html[data-mh="phone"] .sb-gameboy .m2t-stub{
+  position:relative;flex:0 0 62px;width:62px;box-sizing:border-box;
+  padding:9px 7px 8px;
+  display:flex;flex-direction:column;gap:0;
+  border-left:1px dashed rgba(238,188,204,.95);
+}
+html[data-mh="phone"] .sb-gameboy .m2t-stub::before,
+html[data-mh="phone"] .sb-gameboy .m2t-stub::after{
+  content:'';position:absolute;left:-6.5px;width:13px;height:13px;border-radius:50%;
+  background:var(--milk,#fdfaf6);
+  box-shadow:inset 0 0 0 1px rgba(238,188,204,.9);
+}
+html[data-mh="phone"] .sb-gameboy .m2t-stub::before{top:-6.5px}
+html[data-mh="phone"] .sb-gameboy .m2t-stub::after{bottom:-6.5px}
+html[data-mh="phone"] .sb-gameboy .m2t-eco{
+  align-self:flex-start;
+  padding:1px 5px;border-radius:2px;
+  background:var(--pk0,#fdf4f7);
+  box-shadow:inset 0 0 0 1px rgba(238,188,204,.9);
+  font-family:'Special Elite',ui-monospace,monospace;
+  font-size:5.4px;letter-spacing:1px;color:var(--pk5,#cc7d9b);
+}
+html[data-mh="phone"] .sb-gameboy .m2t-k{
+  margin-top:7px;font-family:'Special Elite',ui-monospace,monospace;
+  font-size:4.6px;letter-spacing:1.1px;color:var(--pk3,#eebccc);
+}
+html[data-mh="phone"] .sb-gameboy .m2t-v{
+  font-family:'Special Elite',ui-monospace,monospace;font-weight:400;
+  font-size:6.6px;letter-spacing:.7px;color:var(--ink2,#8b7680);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+/* 条形码 */
+html[data-mh="phone"] .sb-gameboy .m2t-bar{
+  margin-top:auto;height:20px;width:100%;
+  background-image:repeating-linear-gradient(90deg,
+    var(--ink,#5b4750) 0 1px, rgba(255,255,255,0) 1px 2.4px,
+    var(--ink,#5b4750) 2.4px 3px, rgba(255,255,255,0) 3px 5px,
+    var(--ink,#5b4750) 5px 6.4px, rgba(255,255,255,0) 6.4px 8px);
+  opacity:.72;
+}
+html[data-mh="phone"] .sb-gameboy .m2t-no{
+  margin-top:2px;text-align:center;
+  font-family:'Special Elite',ui-monospace,monospace;
+  font-size:5px;letter-spacing:1.6px;color:var(--pk4,#e09cb5);
+}
+
+/* 照片窗口：跟相册里的相框同一套（白纸 + 粉线 + 内影） */
+html[data-mh="phone"] .sb-gameboy .ph,
+html[data-mh="phone"] .sb-gameboy .slot--gb.jh-natural-photo .ph,
+html[data-mh="phone"] .sb-gameboy .slot--gb.jh-natural-photo .ph[data-full="1"]{
+  position:relative!important;
+  left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;
+  width:auto!important;height:auto!important;
+  aspect-ratio:16/9!important;border-radius:3px!important;
+  z-index:2!important;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden!important;
+  background-color:var(--pk0,#fdf4f7)!important;
+  background-image:linear-gradient(160deg,var(--pk0,#fdf4f7),var(--pk1,#fbe8ee))!important;
+  box-shadow:
+    inset 0 0 0 1px var(--pk3,#eebccc),
+    inset 0 1px 6px rgba(150,112,124,.16)!important;
+  outline:0!important;
+}
+html[data-mh="phone"] .sb-gameboy .ph .empty{
+  font-family:var(--en-hand);font-size:15px;color:var(--pk5,#cc7d9b)!important;
+  text-shadow:0 1px 0 rgba(255,255,255,.75);
+}
+/* 照片位右上角一枚「⟳ 换图」角标：看得见才点得到 */
+html[data-mh="phone"] .sb-gameboy .m2t-photo{position:relative}
+html[data-mh="phone"] .sb-gameboy .m2t-chgtip{
+  position:absolute;right:5px;bottom:5px;z-index:3;pointer-events:none;
+  padding:1px 5px;border-radius:999px;
+  background:rgba(255,253,249,.88);
+  box-shadow:inset 0 0 0 1px var(--pk3,#eebccc);
+  font-family:'Special Elite',ui-monospace,monospace;font-style:normal;
+  font-size:5.8px;letter-spacing:1px;color:var(--pk5,#cc7d9b);
+}
+/* 照片位：手指点下去要有反应，别再怀疑点不动 */
+html[data-mh="phone"] .sb-gameboy .ph{
+  cursor:pointer;touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  transition:filter .15s ease, box-shadow .15s ease;
+}
+html[data-mh="phone"] .sb-gameboy .ph:active{
+  filter:brightness(1.03);
+  box-shadow:inset 0 0 0 1px var(--pk4,#e09cb5), inset 0 1px 6px rgba(150,112,124,.2)!important;
+}
+
+/* 底下一行：Us + ♥104 + ⟳（票外） */
+html[data-mh="phone"] .sb-gameboy .caprow,
+html[data-mh="phone"] .sb-gameboy .slot--gb.jh-natural-photo .caprow{
+  position:relative!important;display:flex!important;align-items:center;gap:6px;
+  margin:6px 2px 0!important;padding:0!important;min-height:0!important;
+}
+html[data-mh="phone"] .sb-gameboy .caprow .cap,
+html[data-mh="phone"] .sb-gameboy .slot--gb.jh-natural-photo .caprow .cap{
+  position:static!important;display:block!important;width:auto!important;
+  right:auto!important;bottom:auto!important;left:auto!important;
+  font-family:var(--en-hand)!important;font-size:20px!important;line-height:1!important;
+  color:var(--ink2,#8b7680)!important;text-align:left!important;white-space:nowrap;
+}
+html[data-mh="phone"] .sb-gameboy .caprow .score,
+html[data-mh="phone"] .sb-gameboy .slot--gb.jh-natural-photo .caprow .score{
+  position:static!important;order:1;margin:0 0 0 2px!important;inset:auto!important;
+  display:inline-flex!important;align-items:center;gap:3px;padding:0!important;border-radius:0;
+  background:none!important;border:0!important;box-shadow:none!important;text-shadow:none!important;
+  font-family:'Special Elite',ui-monospace,monospace;font-size:6.8px;letter-spacing:1.1px;color:var(--pk5,#cc7d9b);opacity:1;
+}
+html[data-mh="phone"] .sb-gameboy .caprow .score i,
+html[data-mh="phone"] .sb-gameboy .slot--gb.jh-natural-photo .caprow .score i{color:var(--pk4,#e09cb5);font-size:7px}
+html[data-mh="phone"] .sb-gameboy .caprow .score b{font-weight:400;font-family:inherit}
+html[data-mh="phone"] .sb-gameboy .caprow .chg,
+html[data-mh="phone"] .sb-gameboy .slot--gb.jh-natural-photo .caprow .chg{
+  position:static!important;right:auto!important;top:auto!important;bottom:auto!important;
+  margin-left:auto!important;z-index:3;order:3;
+  width:24px!important;height:24px!important;font-size:12px!important;line-height:1!important;
+}
+/* 旧的掌机机身壳子收掉（照片和爱心数都已经搬走了） */
+html[data-mh="phone"] .sb-gameboy .gbwrap,
+html[data-mh="phone"] .sb-gameboy .slot--gb.jh-natural-photo .gbwrap{display:none!important}
+
+/* 旧的胶片/掌机件一律不显示 */
+html[data-mh="phone"] .sb-gameboy .m2f-perf,
+html[data-mh="phone"] .sb-gameboy .gbwrap > .m2c-orn{display:none!important}
+
+
+/* ============================================================================
+   10. 第 2 屏：今天的待办 / 今天的心情   · 第 3 屏：应用索引表
+       —— 只手机。全部用书里现成的：--sheet 纸、--pk0…--pk6 粉、--ink/--ink2 墨、--milk 页底。
+          不加一张图，不加一个自调色号。
+   ========================================================================== */
+
+/* ---------------------------------------------- ① 待办：一张真正的清单纸 */
+html[data-mh="phone"] .sb-todo .note{
+  padding:14px 15px 13px!important;
+  border-radius:10px;
+  background-color:var(--sheet,#fffdf9)!important;
+  background-image:none!important;
+  box-shadow:
+    inset 0 0 0 1px var(--pk3,#eebccc),
+    2px 3px 0 rgba(163,124,137,.12),
+    0 14px 24px -20px rgba(150,112,124,.75)!important;
+}
+/* 左侧装订线 + 打孔 */
+html[data-mh="phone"] .sb-todo .note::before{
+  content:'';position:absolute;left:26px;top:8px;bottom:8px;width:0;
+  border-left:1px solid rgba(238,188,204,.85);pointer-events:none;
+}
+html[data-mh="phone"] .sb-todo .note::after{
+  content:'';position:absolute;left:11px;top:11px;width:8px;height:8px;border-radius:50%;
+  background:var(--milk,#fdfaf6);
+  box-shadow:inset 0 1px 2px rgba(150,110,124,.45), 0 0 0 1px rgba(238,188,204,.85);
+  pointer-events:none;
+}
+html[data-mh="phone"] .sb-todo .note h4{
+  padding-left:22px;padding-right:30px;margin-bottom:6px!important;
+}
+html[data-mh="phone"] .sb-todo .note h4 .jh-en{
+  font-family:'Special Elite',ui-monospace,monospace!important;
+  font-size:6.4px!important;letter-spacing:2px!important;color:var(--pk3,#eebccc)!important;
+}
+html[data-mh="phone"] .sb-todo .note h4 .tag{
+  margin-left:auto!important;
+  height:auto!important;padding:1px 6px!important;border-radius:2px!important;
+  background:none!important;
+  box-shadow:inset 0 0 0 1px rgba(238,188,204,.9)!important;
+  font-family:'Special Elite',ui-monospace,monospace!important;
+  font-size:6.4px!important;letter-spacing:1.2px!important;color:var(--pk5,#cc7d9b)!important;
+}
+/* 每一行：方块 → 手写勾；文字后面跟点线；时间换成等宽小字 */
+html[data-mh="phone"] .sb-todo .chk{
+  padding:8px 0 8px 22px!important;gap:10px!important;
+  border-top:0!important;
+}
+html[data-mh="phone"] .sb-todo .chk + .chk{
+  border-top:1px dotted rgba(238,188,204,.9)!important;
+}
+html[data-mh="phone"] .sb-todo .chk .box{
+  width:18px!important;height:18px!important;flex:0 0 18px!important;border-radius:3px!important;
+  background:var(--sheet,#fffdf9)!important;
+  box-shadow:inset 0 0 0 1.4px var(--pk3,#eebccc), 0 1px 0 rgba(255,255,255,.9)!important;
+}
+html[data-mh="phone"] .sb-todo .chk[aria-pressed="true"] .box{
+  background:var(--pk1,#fbe8ee)!important;
+  box-shadow:inset 0 0 0 1.4px var(--pk4,#e09cb5)!important;
+}
+html[data-mh="phone"] .sb-todo .chk .tx{
+  font-size:13.2px!important;color:var(--ink,#5b4750)!important;
+}
+html[data-mh="phone"] .sb-todo .chk .tm{
+  font-family:'Special Elite',ui-monospace,monospace!important;
+  font-size:7.4px!important;letter-spacing:1px!important;color:var(--pk6,#ad617e)!important;
+}
+/* 做完的那行：右端盖一个很小的 DONE 戳 */
+html[data-mh="phone"] .sb-todo .chk[aria-pressed="true"]::after{
+  content:'DONE';flex:0 0 auto;
+  font-family:'Special Elite',ui-monospace,monospace;
+  font-size:5.6px;letter-spacing:1.2px;color:var(--pk4,#e09cb5);
+  border:1px solid rgba(224,156,181,.85);border-radius:2px;
+  padding:0 3px;transform:rotate(-4deg);
+}
+/* 进度条撤掉了：它按 aria-pressed 算，而 #wTodoCnt 是真实数据，两条口径会打架 */
+
+/* ------------------------------------------- ② 心情：一把心情刻度尺 */
+html[data-mh="phone"] .sb-mood .note{
+  padding:14px 15px 13px!important;
+  border-radius:10px;
+  background-color:var(--sheet,#fffdf9)!important;
+  background-image:none!important;
+  box-shadow:
+    inset 0 0 0 1px var(--pk3,#eebccc),
+    2px 3px 0 rgba(163,124,137,.12),
+    0 14px 24px -20px rgba(150,112,124,.75)!important;
+}
+html[data-mh="phone"] .sb-mood .note h4 .jh-en{
+  font-family:'Special Elite',ui-monospace,monospace!important;
+  font-size:6.4px!important;letter-spacing:2px!important;color:var(--pk3,#eebccc)!important;
+}
+html[data-mh="phone"] .sb-mood .note h4{padding-right:30px}
+html[data-mh="phone"] .sb-mood .note h4::after{
+  content:'No.03';margin-left:auto;
+  font-family:'Special Elite',ui-monospace,monospace;
+  font-size:6px;letter-spacing:1.4px;color:var(--pk3,#eebccc);
+}
+/* 刻度尺：一条横轴 + 四段刻度 */
+html[data-mh="phone"] .sb-mood .mood{
+  position:relative;margin-top:8px!important;
+  padding-bottom:15px;
+}
+html[data-mh="phone"] .sb-mood .mood::before{
+  content:'';position:absolute;left:2%;right:2%;bottom:11px;height:0;
+  border-top:1px solid rgba(238,188,204,.9);
+}
+
+html[data-mh="phone"] .sb-mood .mood button{
+  position:relative;
+}
+html[data-mh="phone"] .sb-mood .mood button s{
+  font-family:'Special Elite',ui-monospace,monospace!important;
+  font-size:6.2px!important;letter-spacing:1.1px!important;color:var(--pk5,#cc7d9b)!important;
+  text-decoration:none!important;
+}
+/* 每个情绪下面一小截刻度线 */
+html[data-mh="phone"] .sb-mood .mood button::after{
+  content:'';position:absolute;left:50%;bottom:-9px;width:1px;height:5px;
+  background:rgba(224,156,181,.9);transform:translateX(-50%);
+}
+html[data-mh="phone"] .sb-mood .mood button[aria-pressed="true"]::after{
+  height:7px;background:var(--pk4,#e09cb5);
+}
+/* 那句 today feels like…：手写 + 一条手绘虚线 */
+html[data-mh="phone"] .sb-mood .note-follow{
+  margin-top:10px!important;
+  padding-top:8px;
+  font-size:21px!important;
+  color:var(--ink2,#8b7680)!important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='9'%3E%3Cpath d='M0 5 q 15 -3 30 0 t 30 0 t 30 0 t 30 0' fill='none' stroke='%23eebccc' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:repeat-x;background-size:120px 9px;background-position:2px 100%;padding-bottom:6px;
+}
+
+/* ------------------------------------------ ③ 第 3 屏：应用 → 一枝水彩柳枝（无框） */
+/* 方块去掉：不留纸卡、不留边框、不留影子，枝条直接落在页面的格纸上 */
+html[data-mh="phone"] .sb-rooms .sheet{
+  padding:0!important;margin:0!important;
+  background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+  overflow:visible!important;
+}
+html[data-mh="phone"] .sb-rooms .sheet::before,
+html[data-mh="phone"] .sb-rooms .sheet::after{content:none!important}
+/* 枝条：一张水彩图，从左上角垂下来 */
+html[data-mh="phone"] .sb-rooms .m2tree{
+  position:relative;width:100%;aspect-ratio:760/1110;
+  background-image:url("aset/gen/tree.png");
+  background-repeat:no-repeat;
+  background-size:100% auto;
+  background-position:50% 100%;
+}
+/* 树底下一块粉色地面：一层浅浅的坡 + 几片落花 + 树根处一道软影 */
+html[data-mh="phone"] .sb-rooms .m2tree::before{
+  content:'';position:absolute;left:10%;right:10%;bottom:-1px;height:34px;z-index:1;
+  pointer-events:none;
+  background:linear-gradient(180deg, var(--pk1,#fbe8ee) 0%, var(--pk2,#f6d6e1) 62%, var(--pk3,#eebccc) 100%);
+  border-radius:50% 50% 9px 9px / 13px 11px 9px 9px;
+  box-shadow:
+    inset 0 1px 0 rgba(150,112,124,.22),
+    0 -1px 0 rgba(255,255,255,.6);
+}
+/* 树根处的软影 + 落在地上的花瓣 */
+html[data-mh="phone"] .sb-rooms .m2tree::after{
+  content:'';position:absolute;left:14%;right:14%;bottom:26px;height:26px;z-index:2;
+  pointer-events:none;
+  background-image:
+    radial-gradient(ellipse 50% 60% at 50% 50%, rgba(190,120,150,.28), rgba(190,120,150,0) 72%),
+    radial-gradient(ellipse 4.2px 2.8px at 22% 88%, var(--pk3,#eebccc) 0 96%, rgba(238,188,204,0) 97%),
+    radial-gradient(ellipse 3.8px 2.5px at 37% 96%, var(--pk4,#e09cb5) 0 96%, rgba(224,156,181,0) 97%),
+    radial-gradient(ellipse 4px 2.6px at 62% 92%, var(--pk3,#eebccc) 0 96%, rgba(238,188,204,0) 97%),
+    radial-gradient(ellipse 3.6px 2.4px at 76% 98%, var(--pk4,#e09cb5) 0 96%, rgba(224,156,181,0) 97%);
+  background-repeat:no-repeat;
+}
+html[data-mh="phone"] .sb-rooms .grid-s{
+  position:absolute!important;inset:0;
+  display:block!important;padding:0!important;gap:0!important;
+}
+html[data-mh="phone"] .sb-rooms .grid-s::before{content:none!important}
+/* 每个应用：一枚纸吊牌 + 一根虚线挂绳（绳子从吊牌顶端往上，接在枝条上） */
+html[data-mh="phone"] .sb-rooms .cell2{
+  position:absolute!important;
+  transform:translate(-50%,-50%);
+  left:0;top:0;
+  width:66px!important;max-width:66px;
+  padding:4px 3px 3px!important;box-sizing:border-box;
+  display:flex!important;flex-direction:column;align-items:center;gap:2px;
+  border:0!important;text-align:center;
+  background:var(--sheet,#fffdf9)!important;
+  border-radius:7px;
+  box-shadow:
+    inset 0 0 0 1px var(--pk3,#eebccc),
+    0 2px 3px -2px rgba(150,112,124,.5);
+}
+html[data-mh="phone"] .sb-rooms .cell2::after{content:none!important}
+html[data-mh="phone"] .sb-rooms .cell2::before{
+  content:'';position:absolute;left:50%;bottom:100%;width:0;
+  height:var(--th,16px);transform:translateX(-.5px);
+  border-left:1px dashed rgba(139,118,128,.55);
+  pointer-events:none;
+}
+/* 挂绳顶上一枚小勾点，像穿在枝子上 */
+html[data-mh="phone"] .sb-rooms .cell2 .art::after{content:none!important}
+html[data-mh="phone"] .sb-rooms .cell2 .art{
+  width:22px!important;height:22px!important;flex:0 0 22px;
+  padding:4px;box-sizing:content-box;border-radius:50%;
+  background:var(--sheet,#fffdf9);
+  box-shadow:inset 0 0 0 1px var(--pk3,#eebccc), 0 2px 3px -2px rgba(150,112,124,.45);
+}
+html[data-mh="phone"] .sb-rooms .cell2.big .art{
+  width:30px!important;height:30px!important;flex:0 0 30px;
+  box-shadow:inset 0 0 0 1.4px var(--pk4,#e09cb5), 0 3px 5px -3px rgba(150,112,124,.5);
+}
+/* 名字：压在叶子上也要看得清 */
+html[data-mh="phone"] .sb-rooms .cell2 .en,
+html[data-mh="phone"] .sb-rooms .cell2 .cn{
+  background:none;padding:0;box-shadow:none;white-space:nowrap;
+}
+html[data-mh="phone"] .sb-rooms .cell2 .en{
+  font-size:11.5px!important;line-height:1;color:var(--ink2,#8b7680);
+}
+html[data-mh="phone"] .sb-rooms .cell2.big .en{font-size:13px!important}
+html[data-mh="phone"] .sb-rooms .cell2 .cn{
+  font-size:6.2px!important;letter-spacing:.5px;color:var(--pk5,#cc7d9b)!important;
+}
+html[data-mh="phone"] .sb-rooms .cell2:active{transform:translate(-50%,-50%) scale(.95)}
+
+/* ============================================================================
+   11. 世界书：不再是三个圈，改成"一本摊开的小书"（只手机）
+       —— 左页书名（世界书 / WORLDBOOK），右页三行账目（DAYS / PHOTOS / LETTERS），
+          中间书脊阴影、页边、右上一条书签带；数字仍是原来的 #csDays 等，会实时更新。
+   ========================================================================== */
+html[data-mh="phone"] .circle-stats{
+  display:block!important;padding:0!important;margin:2px 0 6px!important;
+  position:relative;
+  background:none!important;box-shadow:none!important;border:0!important;
+}
+html[data-mh="phone"] .circle-stats .jh-app{display:none!important}
+html[data-mh="phone"] .circle-stats .cs{display:none!important}
+
+/* 书：两页 + 书脊 */
+html[data-mh="phone"] .m2wb{
+  position:relative;display:flex;align-items:stretch;
+  width:100%;box-sizing:border-box;
+  border-radius:10px;
+  background:linear-gradient(180deg, var(--sheet,#fffdf9), #fdf6f1);
+  box-shadow:
+    inset 0 0 0 1px var(--pk3,#eebccc),
+    3px 3px 0 -1px var(--sheet,#fffdf9),
+    3px 3px 0 0 rgba(238,188,204,.95),
+    5px 5px 0 -1px var(--sheet,#fffdf9),
+    5px 5px 0 0 rgba(238,188,204,.7),
+    0 14px 24px -20px rgba(150,112,124,.8);
+  transform:rotate(-.6deg);
+}
+/* 两页之间的书脊：一条竖影 + 两侧压深 */
+html[data-mh="phone"] .m2wb::after{
+  content:'';position:absolute;left:50%;top:3px;bottom:3px;width:9px;
+  transform:translateX(-50%);pointer-events:none;
+  background:linear-gradient(90deg,
+    rgba(150,112,124,0) 0%, rgba(150,112,124,.26) 46%,
+    rgba(150,112,124,.34) 50%, rgba(150,112,124,.26) 54%, rgba(150,112,124,0) 100%);
+  border-radius:4px;
+}
+html[data-mh="phone"] .m2wb-page{
+  flex:1 1 50%;min-width:0;box-sizing:border-box;
+  padding:11px 12px 10px;
+  display:flex;flex-direction:column;
+}
+/* 左页：书名 */
+html[data-mh="phone"] .m2wb-l{text-align:left;justify-content:center;gap:3px}
+html[data-mh="phone"] .m2wb-k{
+  font-family:var(--cn);font-size:16px;letter-spacing:3px;color:var(--ink,#5b4750);
+}
+html[data-mh="phone"] .m2wb-en{
+  font-family:'Special Elite',ui-monospace,monospace;
+  font-size:6.6px;letter-spacing:2.2px;color:var(--pk5,#cc7d9b);
+}
+html[data-mh="phone"] .m2wb-hint{
+  margin-top:4px;padding-top:4px;
+  border-top:1px dashed rgba(238,188,204,.9);
+  font-family:var(--cn);font-size:8px;letter-spacing:.6px;color:var(--ink3,#b6a5ac);
+}
+/* 右页：三行账目（点线引导 + 数字） */
+html[data-mh="phone"] .m2wb-r{gap:7px;justify-content:center;padding-right:14px}
+html[data-mh="phone"] .m2wb-row{
+  display:flex;align-items:baseline;gap:5px;width:100%;
+}
+html[data-mh="phone"] .m2wb-row s{
+  text-decoration:none;flex:0 0 auto;
+  font-family:'Special Elite',ui-monospace,monospace;
+  font-size:6.4px;letter-spacing:1.4px;color:var(--pk5,#cc7d9b);
+}
+html[data-mh="phone"] .m2wb-row i{
+  flex:1 1 auto;height:0;border-bottom:1px dotted rgba(224,156,181,.85);
+  transform:translateY(-2px);
+}
+html[data-mh="phone"] .m2wb-row b{
+  flex:0 0 auto;font-weight:400;
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:16px;line-height:1;color:var(--ink,#5b4750);
+}
+/* 书签带：从书里露出来一截 */
+html[data-mh="phone"] .m2wb::before{
+  content:'';position:absolute;right:16px;top:-6px;width:11px;height:22px;z-index:2;
+  background:linear-gradient(180deg, var(--pk4,#e09cb5), var(--pk5,#cc7d9b));
+  clip-path:polygon(0 0,100% 0,100% 100%,50% 78%,0 100%);
+  box-shadow:0 1px 2px rgba(150,112,124,.35);
+}
+
+/* ============================================================================
+   12. 第 3 屏：表情包 → 一张"贴进手帐的画"（长条风景画 + 纸卡 + 两角胶带）
+   ========================================================================== */
+html[data-mh="phone"] .sb-love-stickers .bstickers{
+  display:block!important;padding:0!important;margin:0!important;
+  background:none!important;box-shadow:none!important;border:0!important;
+  position:relative;
+}
+html[data-mh="phone"] .sb-love-stickers .bstickers .jh-app{display:none!important}
+html[data-mh="phone"] .sb-love-stickers .bsticker{display:none!important}
+
+/* 纸卡：上左右窄、下方宽一点（照片卡的样子），微微歪着贴 */
+html[data-mh="phone"] .sb-love-stickers .m2bst-wrap{
+  position:relative;
+  padding:5px 5px 20px;
+  background:var(--sheet,#fffdf9);
+  border-radius:3px;
+  box-shadow:
+    inset 0 0 0 1px var(--pk3,#eebccc),
+    0 1px 0 rgba(255,255,255,.7),
+    0 6px 12px -8px rgba(150,112,124,.85),
+    0 14px 22px -18px rgba(150,112,124,.6);
+  transform:rotate(-.7deg);
+}
+/* 画本身 */
+html[data-mh="phone"] .sb-love-stickers .m2bst{
+  display:block;width:100%;height:auto;
+  border-radius:1px;
+  box-shadow:inset 0 0 0 1px rgba(238,188,204,.7);
+  pointer-events:none;
+}
+/* 两个角的胶带 */
+html[data-mh="phone"] .sb-love-stickers .m2bst-tape{
+  position:absolute;top:-7px;width:44px;height:15px;
+  background:
+    repeating-linear-gradient(135deg, rgba(255,253,249,.55) 0 3px, rgba(246,214,225,.6) 3px 7px),
+    rgba(251,232,238,.72);
+  box-shadow:0 1px 2px rgba(150,112,124,.18);
+  border-left:1px dashed rgba(224,156,181,.55);
+  border-right:1px dashed rgba(224,156,181,.55);
+  pointer-events:none;
+}
+html[data-mh="phone"] .sb-love-stickers .m2bst-tape--l{left:8px;transform:rotate(-8deg)}
+html[data-mh="phone"] .sb-love-stickers .m2bst-tape--r{right:8px;transform:rotate(7deg)}
+/* 卡下那行字：中文 + 等宽英文，两侧各一小段细线 */
+html[data-mh="phone"] .sb-love-stickers .m2bst-cap{
+  position:absolute;left:0;right:0;bottom:4px;
+  display:flex;align-items:baseline;justify-content:center;gap:5px;
+  line-height:1;
+}
+html[data-mh="phone"] .sb-love-stickers .m2bst-cap b{
+  font-family:var(--cn);font-weight:400;font-size:8.4px;letter-spacing:1.4px;
+  color:var(--ink2,#8b7680);
+}
+html[data-mh="phone"] .sb-love-stickers .m2bst-open{
+  margin-left:7px;font-family:var(--cn);font-size:7px;font-weight:400;letter-spacing:.4px;
+  color:var(--pk5,#cc7d9b);text-decoration:underline;text-underline-offset:2px;cursor:pointer;
+}
+html[data-mh="phone"] .sb-love-stickers .m2bst-cap s{
+  text-decoration:none;font-family:'Special Elite',ui-monospace,monospace;
+  font-size:6px;letter-spacing:1.4px;color:var(--pk4,#e09cb5);
+}
+html[data-mh="phone"] .sb-love-stickers .m2bst-cap::before,
+html[data-mh="phone"] .sb-love-stickers .m2bst-cap::after{
+  content:'';flex:0 0 18px;height:0;border-top:1px solid rgba(238,188,204,.85);
+  transform:translateY(-1.5px);
+}
+
+
+/* ============================================================================
+   14. P2 大圆盘 → 音乐播放器（精修版：羽翼 + 双层弧 + 刻度 + 圆环控制键）
+   ========================================================================== */
+html[data-mh="phone"] .sb-date-disc .jh-app{display:none!important}
+html[data-mh="phone"] .sb-date-disc .sb-content{padding:0!important}
+html[data-mh="phone"] .m2pw{
+  position:relative;box-sizing:border-box;padding:0 2px 2px;
+  display:flex;flex-direction:column;align-items:center;
+}
+/* ---------- 头像区 ---------- */
+html[data-mh="phone"] .m2pw-av{
+  position:relative;display:flex;justify-content:center;align-items:flex-start;
+  gap:16px;width:100%;padding-top:24px;
+}
+html[data-mh="phone"] .m2pw-item{position:relative;display:flex;flex-direction:column;align-items:center}
+html[data-mh="phone"] .m2pw-cap{
+  position:absolute;top:-15px;left:50%;transform:translateX(-50%);z-index:3;
+  padding:2px 10px;border-radius:99px;white-space:nowrap;
+  border:1px dashed rgba(204,125,155,.9);
+  background:rgba(255,253,249,.96);
+  font-family:var(--cn);font-size:8.4px;letter-spacing:.9px;color:var(--pk6,#ad617e);
+  box-shadow:0 1px 2px rgba(150,112,124,.10);
+}
+html[data-mh="phone"] .m2pw-ring{
+  position:relative;width:100px;height:100px;border-radius:50%;display:block;overflow:hidden;
+  background:linear-gradient(180deg,#fffdf9,#fdf6f1) center/cover no-repeat;
+  box-shadow:
+    inset 0 0 0 1.2px rgba(238,188,204,.95),
+    inset 0 2px 6px rgba(203,160,175,.16),
+    0 6px 14px -10px rgba(150,112,124,.9);
+  cursor:pointer;z-index:1;
+}
+/* 空态：内虚线圈 + ＋换图 */
+html[data-mh="phone"] .m2pw-empty{
+  position:absolute;inset:8px;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  border:1px dashed rgba(238,188,204,.95);
+  font-style:normal;pointer-events:none;
+}
+html[data-mh="phone"] .m2pw-empty b{font-size:15px;font-weight:400;color:var(--pk4,#e09cb5);line-height:1}
+html[data-mh="phone"] .m2pw-empty s{
+  text-decoration:none;font-family:'Special Elite',ui-monospace,monospace;
+  font-size:5.6px;letter-spacing:1.4px;color:var(--ink3,#b6a5ac);
+}
+html[data-mh="phone"] .m2pw-ring.has-img .m2pw-empty,
+html[data-mh="phone"] .m2pw-cover.has-img .m2pw-empty{display:none}
+/* 羽翼：用你给的白色翅膀素材（左/右各一张） */
+html[data-mh="phone"] .m2pw-wingimg{
+  position:absolute;top:-2px;width:56px;height:54px;z-index:0;pointer-events:none;
+  background-repeat:no-repeat;background-position:center;background-size:contain;
+  opacity:.9;filter:drop-shadow(0 2px 3px rgba(150,112,124,.12));
+}
+html[data-mh="phone"] .m2pw-wingimg.is-l{left:-44px;background-image:url("aset/paper/wing-l.webp")}
+html[data-mh="phone"] .m2pw-wingimg.is-r{right:-44px;background-image:url("aset/paper/wing-r.webp")}
+/* 双层拥抱弧 + 小心心 */
+html[data-mh="phone"] .m2pw-arc{
+  position:absolute;left:50%;bottom:-30px;width:236px;height:54px;transform:translateX(-50%);
+  fill:none;pointer-events:none;
+}
+html[data-mh="phone"] .m2pw-arc .a1{stroke:rgba(204,125,155,.5);stroke-width:1;stroke-dasharray:2.4 3}
+html[data-mh="phone"] .m2pw-arc .a2{stroke:rgba(204,125,155,.24);stroke-width:.9;stroke-dasharray:1.8 3.4}
+html[data-mh="phone"] .m2pw-heart{
+  position:absolute;left:50%;bottom:-24px;transform:translateX(-50%);
+  font-style:normal;font-size:8px;color:var(--pk4,#e09cb5);pointer-events:none;
+}
+html[data-mh="phone"] .m2pw-note{position:absolute;font-style:normal;color:rgba(204,125,155,.7);pointer-events:none}
+html[data-mh="phone"] .m2pw-note.is-a{left:13%;top:2px;font-size:9px}
+html[data-mh="phone"] .m2pw-note.is-b{right:12%;top:-2px;font-size:11px}
+html[data-mh="phone"] .m2pw-line{
+  margin:32px 0 10px;font-family:var(--cn);font-size:9px;letter-spacing:2.4px;
+  color:var(--ink3,#b6a5ac);text-align:center;
+}
+/* ---------- 磨砂卡 ---------- */
+html[data-mh="phone"] .m2pw-glass{
+  position:relative;display:flex;gap:11px;width:100%;box-sizing:border-box;
+  padding:12px 12px 11px;border-radius:16px;
+  background:linear-gradient(180deg, rgba(255,253,249,.96), rgba(253,246,241,.9));
+  box-shadow:
+    inset 0 0 0 1px rgba(238,188,204,.95),
+    inset 0 1.2px 0 rgba(255,255,255,.95),
+    0 3px 0 rgba(163,124,137,.12),
+    0 18px 28px -24px rgba(150,112,124,.9);
+  backdrop-filter:blur(4px);
+}
+html[data-mh="phone"] .m2pw-plate{
+  position:absolute;right:11px;top:-7px;
+  padding:1px 7px;border-radius:2px;
+  background:var(--sheet,#fffdf9);
+  box-shadow:inset 0 0 0 1px rgba(238,188,204,.9);
+  font-family:'Special Elite',ui-monospace,monospace;
+  font-size:5.6px;letter-spacing:1.6px;color:var(--pk5,#cc7d9b);
+}
+html[data-mh="phone"] .m2pw-cover{
+  position:relative;flex:0 0 84px;width:84px;height:84px;border-radius:9px;display:block;
+  background:linear-gradient(180deg,var(--pk0,#fdf4f7),var(--pk1,#fbe8ee)) center/cover no-repeat;
+  box-shadow:inset 0 0 0 1px rgba(238,188,204,.95), inset 0 2px 5px rgba(203,160,175,.14);
+  cursor:pointer;align-self:flex-start;
+}
+html[data-mh="phone"] .m2pw-cover .m2pw-empty{
+  inset:6px;border-radius:6px;
+}
+html[data-mh="phone"] .m2pw-mid{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+html[data-mh="phone"] .m2pw-hd{display:flex;align-items:baseline;gap:7px;min-width:0}
+html[data-mh="phone"] .m2pw-hd b{font-family:var(--cn);font-weight:400;font-size:16.5px;letter-spacing:1.6px;color:var(--ink,#5b4750)}
+html[data-mh="phone"] .m2pw-hd s{
+  text-decoration:none;font-family:'Special Elite',ui-monospace,monospace;
+  font-size:6px;letter-spacing:1.2px;color:var(--ink3,#b6a5ac);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+html[data-mh="phone"] .m2pw-rule{
+  display:block;height:0;margin:4px 0 7px;
+  border-top:1px solid rgba(238,188,204,.85);
+}
+/* 滑杆（带刻度） */
+html[data-mh="phone"] .m2pw-slide{
+  position:relative;display:block;height:2px;border-radius:99px;
+  background:rgba(238,188,204,.85);
+}
+html[data-mh="phone"] .m2pw-slide i{position:absolute;left:0;top:0;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--pk3,#eebccc),var(--pk5,#cc7d9b))}
+html[data-mh="phone"] .m2pw-tick{
+  position:absolute;left:0;right:0;top:4px;height:2px;
+  background:repeating-linear-gradient(90deg, rgba(238,188,204,.75) 0 1px, transparent 1px 12px);
+  pointer-events:none;
+}
+html[data-mh="phone"] .m2pw-knob{
+  position:absolute;top:50%;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;
+  background:var(--sheet,#fffdf9);
+  box-shadow:0 0 0 1.5px var(--pk4,#e09cb5), 0 1px 2px rgba(150,112,124,.35);
+}
+html[data-mh="phone"] .m2pw-times{
+  display:flex;justify-content:space-between;margin-top:8px;
+  font-family:'Special Elite',ui-monospace,monospace;
+  font-size:5.8px;letter-spacing:1px;color:var(--ink3,#b6a5ac);
+}
+html[data-mh="phone"] .m2pw-times s{text-decoration:none}
+/* 音量行 */
+html[data-mh="phone"] .m2pw-vol{display:flex;align-items:center;gap:7px;margin-top:7px}
+html[data-mh="phone"] .m2pw-vol svg{width:11px;height:11px;flex:0 0 11px;fill:var(--ink3,#b6a5ac)}
+html[data-mh="phone"] .m2pw-vol svg .vv{fill:none;stroke:var(--ink3,#b6a5ac);stroke-width:1.4;stroke-linecap:round}
+html[data-mh="phone"] .m2pw-vol .m2pw-slide{flex:1 1 auto}
+html[data-mh="phone"] .m2pw-vol .m2pw-slide i{background:linear-gradient(90deg,var(--pk2,#f6d6e1),var(--pk4,#e09cb5))}
+/* 控制键：两侧带细圈 */
+html[data-mh="phone"] .m2pw-ctrl{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:9px}
+html[data-mh="phone"] .m2pw-b{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;border-radius:50%;
+  box-shadow:inset 0 0 0 1px rgba(238,188,204,.9);
+  color:var(--ink2,#8b7680);background:rgba(255,253,249,.7);
+}
+html[data-mh="phone"] .m2pw-b svg{width:10px;height:10px;fill:currentColor}
+html[data-mh="phone"] .m2pw-play{
+  width:40px;height:40px;border:0;padding:0;cursor:pointer;
+  background:linear-gradient(180deg,var(--pk4,#e09cb5),var(--pk5,#cc7d9b));color:#fffdf9;
+  box-shadow:0 4px 11px -7px rgba(150,112,124,.95), inset 0 1px 0 rgba(255,255,255,.45);
+}
+html[data-mh="phone"] .m2pw-play svg{width:14px;height:14px;margin-left:2px}
+/* 标签 */
+html[data-mh="phone"] .m2pw-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+html[data-mh="phone"] .m2pw-tags span{
+  padding:2.5px 9px;border-radius:99px;background:rgba(255,253,249,.92);
+  box-shadow:inset 0 0 0 1px rgba(238,188,204,.95);
+  font-family:var(--cn);font-size:6.8px;letter-spacing:.4px;color:var(--pk6,#ad617e);white-space:nowrap;
+}
+/* 换图徽标 */
+html[data-mh="phone"] .m2pw-tip{display:none}
+html[data-mh="phone"] .m2pw-ring.has-img .m2pw-tip,
+html[data-mh="phone"] .m2pw-cover.has-img .m2pw-tip{display:flex}
+html[data-mh="phone"] .m2pw-tip{
+  position:absolute;right:1px;bottom:1px;width:18px;height:18px;border-radius:50%;
+  align-items:center;justify-content:center;
+  font-size:9px;font-style:normal;color:var(--pk6,#ad617e);
+  background:var(--sheet,#fffdf9);
+  box-shadow:0 0 0 1px rgba(238,188,204,.95), 0 1px 2px rgba(150,112,124,.25);
+  pointer-events:none;
+}
+/* P1 的 Music 小卡：手机上整块不显示（内容搬到 P2 的圆形播放器里） */
+html[data-mh="phone"] .sb-region.sb-music{display:none!important}
+
+/* ============================================================================
+   m2photosize：换图之后相片槽不能塌（原来会缩成 21×44），且要显示整张图
+   ========================================================================== */
+html[data-mh="phone"] .slot .ph{
+  position:relative!important;overflow:hidden;
+  background-size:contain!important;background-position:center!important;background-repeat:no-repeat!important;
+  background-color:var(--pk0,#fdf4f7)!important;
+}
+/* 用更高特异性压过文档里那条 object-fit:cover!important（游戏机的 .slot--gb 除外） */
+html[data-mh="phone"] .slot[data-slot].jh-natural-photo:not(.slot--gb) .ph[data-full="1"] img.jh-full-photo{
+  position:absolute!important;inset:0!important;
+  width:100%!important;height:100%!important;
+  object-fit:cover!important;object-position:center!important;
+}
+/* 立拍得那块：给死宽高，别再让它缩 */
+html[data-mh="phone"] .sb-instant .slot--special{width:126px!important;min-width:126px!important;max-width:126px!important}
+html[data-mh="phone"] .sb-instant .slot--special .ph{
+  width:100%!important;height:auto!important;aspect-ratio:1/1!important;min-height:0!important;
+}
+/* 相册那三张：图片铺满（cover 裁切），不留白也不糊 */
+html[data-mh="phone"] .sb-album .g-stack > span > i[data-full="1"]{
+  background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important;
+}
+
+/* 立拍得底部那两行字（Us / INSTANT FILM）别叠在一起 */
+html[data-mh="phone"] .slot--special.jh-natural-photo > .cap,
+html[data-mh="phone"] .sb-instant .slot--special .cap{
+  position:absolute!important;left:7px!important;right:auto!important;width:auto!important;
+  bottom:3px!important;font-size:15px!important;line-height:1!important;margin:0!important;
+  text-align:left!important;
+}
+html[data-mh="phone"] .slot .chg{
+  width:34px!important;height:34px!important;min-width:34px!important;
+  font-size:16px!important;line-height:1!important;
+  right:-8px!important;bottom:-8px!important;
+}
+html[data-mh="phone"] .sb-instant .slot--special .film{
+  position:absolute!important;right:6px!important;bottom:5px!important;
+  font-size:4.6px!important;letter-spacing:.5px!important;opacity:.85;
+}
+
+/* 换图用的原生 input：铺满、透明，交给 label 触发 */
+html[data-mh="phone"] .m2img-inp{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  opacity:0!important;cursor:pointer;z-index:6;padding:0!important;border:0!important;
+  pointer-events:auto!important;
+}
+/* 表情包那张画：可换图（背景图），保留纸卡与胶带 */
+html[data-mh="phone"] .sb-love-stickers .m2bst{
+  display:block;width:100%;height:auto;aspect-ratio:820/328;
+  background-repeat:no-repeat;background-position:50% 50%;background-size:cover;
+  border-radius:1px;overflow:hidden;position:relative;
+  box-shadow:inset 0 0 0 1px rgba(238,188,204,.7);
+  cursor:pointer;
+}
+html[data-mh="phone"] .sb-love-stickers .m2bst-tip{
+  position:absolute;right:6px;top:6px;padding:1px 6px;border-radius:99px;
+  font-family:'Special Elite',ui-monospace,monospace;font-size:5.6px;letter-spacing:1.2px;
+  font-style:normal;color:var(--pk6,#ad617e);
+  background:rgba(255,253,249,.9);
+  box-shadow:0 0 0 1px rgba(238,188,204,.9);
+  pointer-events:none;
+}
+/* P3 四张相片：图内下方英文短句 */
+html[data-mh="phone"] .sb-gallery .arch .ph{position:relative}
+/* 英文短文案：写在相纸留白里（图片下方），用手机系统字体 */
+html[data-mh="phone"] .m2gal-en{
+  /* 只用通用族：手机里换过字体（主题字体/奶酪体…）时，网页也跟着变 */
+  --m2sys: sans-serif;
+  display:block;position:static;left:auto;right:auto;bottom:auto;
+  margin:3px 0 1px;text-align:center;text-decoration:none;pointer-events:none;
+  font-family:var(--m2sys);
+  font-size:6.6px;font-weight:600;letter-spacing:2px;
+  color:var(--pk5,#cc7d9b);
+  z-index:2;
+}
+/* 合照槽：没放图时不显示；拱形相片那三张一直显示（它们自带插画） */
+html[data-mh="phone"] .slot:not(:has(.ph[data-full="1"])) .m2gal-en{display:none}
+html[data-mh="phone"] .slot .ph[data-full="1"] ~ .m2gal-en{display:block}
+/* 工作区那张卡整体收小 */
+html[data-mh="phone"] .sb-tools .jh-note-card{padding:10px 12px 12px!important}
+html[data-mh="phone"] .sb-tools .jh-note-flex{gap:9px!important;align-items:center!important}
+html[data-mh="phone"] .sb-tools .jh-note-txt{gap:2px!important}
+html[data-mh="phone"] .sb-tools .jh-note-txt .hd b{font-size:12.4px!important}
+html[data-mh="phone"] .sb-tools .jh-note-txt p{font-size:11.6px!important;line-height:1.55!important}
+html[data-mh="phone"] .sb-tools .jh-note-art .polaroid{max-width:150px!important}
+html[data-mh="phone"] .sb-tools .jh-note-txt .minis .tag{font-size:7.4px!important;padding:1px 6px!important}
+
+/* ============================================================================
+   m2fullimg：凡是"相片"，一律显示整张图（除游戏机屏幕、圆形头像）
+   ========================================================================== */
+/* 任何 .ph 里放的图（没有被上面规则覆盖到的，兜底） */
+html[data-mh="phone"] .ph[data-full="1"]{
+  background-size:cover!important;background-position:center!important;
+  background-repeat:no-repeat!important;
+}
+html[data-mh="phone"] .ph[data-full="1"] img{
+  width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;
+  object-fit:cover!important;object-position:center!important;
+}
+/* 不再需要虚化底 */
+html[data-mh="phone"] .m2ph-blur{display:none!important}
+/* 播放器的封面方图：整张可见（圆形头像保持 cover，那是头像语义） */
+html[data-mh="phone"] .m2pw-cover{
+  background-size:cover!important;background-position:50% 50%!important;
+  background-repeat:no-repeat!important;
+}
+/* 表情包那张画：换了自己的图也要整张可见 */
+html[data-mh="phone"] .sb-love-stickers .m2bst{
+  background-size:cover!important;background-position:50% 50%!important;
+  background-repeat:no-repeat!important;
+}
+
+/* 相片：整张图 + 同图虚化底（留白处不再突兀） */
+html[data-mh="phone"] .slot .ph,
+html[data-mh="phone"] .slot.jh-natural-photo .ph[data-full="1"]{position:relative!important;overflow:hidden!important;border-radius:2px}
+html[data-mh="phone"] .m2ph-blur{
+  position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-size:cover;background-position:center;
+  filter:blur(10px) saturate(1.06);opacity:.62;transform:scale(1.04);
+}
+html[data-mh="phone"] .slot .ph img.jh-full-photo{position:absolute!important;inset:0!important;z-index:1}
+
+/* ============================================================================
+   m2sysfont：手机上让中文正文用「手机主题字体」
+   —— 只覆盖 --cn（宋体那一支），手写体/等宽体这些装饰字体保持不动
+   ==========================================================================
+   实测（vivo PA2573 / Android 16 / VivoBrowser = Chrome 146 / DPR 2.5；
+        当前主题字体「我的眼泪是一片透明湖」，名字见 settings global cur_using_font_name）：
+     · sans-serif  → 写死的 Roboto + Noto 兜底（中文 1em / 西文 254.88），换主题字体它不动；
+     · 按名字点    → vivo Sans / Noto / Songti / MiSans / Source Han … 全部塌成同一个 face，
+                     WebView 里没有主题字体的注册名，点不到；
+     · system-ui   → 就是系统主题字体本身（中文 0.94em / 西文 201.68；849 个常用字实测
+                     848 个走它，剩下的「我」是它的装饰字形，42.6 宽）。
+   所以 --cn 认 system-ui，后面才是兜底（别的机器没主题字体时掉回常规无衬线）。
+   ========================================================================== */
+/* 2026-10-31：改成宋体（用户指定"华康宋体"风格）——
+   华康宋体是商业字体，用开源同气质替代：思源宋体 Noto Serif SC（SIL OFL）。
+   字体已按页面实际用到的 4129 个字符裁过子集（400/600 各 ~720KB），
+   构建时由 build.py 内联成 data:font/woff2，单文件仍然能拷走。 */
+@font-face{
+  font-family:'M2Serif';
+  font-style:normal;
+  font-weight:400;
+  font-display:swap;
+  src:url(aset/fonts/m2serif-400.woff2) format('woff2');
+}
+@font-face{
+  font-family:'M2Serif';
+  font-style:normal;
+  font-weight:600;
+  font-display:swap;
+  src:url(aset/fonts/m2serif-600.woff2) format('woff2');
+}
+html[data-mh="phone"]{
+  /* 宋体优先；万一某个字不在子集里，退回系统字体，不会出现方框 */
+  --cn: 'M2Serif', system-ui, -apple-system, "PingFang SC", sans-serif;
+}
+
+/* >>> m2sysfont-small (auto by gen-small-font.py) >>> */
+/* 42 条 <10px 的规则钉回无衬线：主题字体在这个字号会糊。
+   改源码后重跑 _mobile/tools/gen-small-font.py 重新生成，别手改这一段。 */
+html[data-mh="phone"]{--cn-small:sans-serif}
+html[data-mh="phone"] #pg-apps .m2-appfoot,
+html[data-mh="phone"] #pg-apps .m2-plate b,
+html[data-mh="phone"] #pg-apps .m2-plate s,
+html[data-mh="phone"] .bsticker s,
+html[data-mh="phone"] .entry .t i,
+html[data-mh="phone"] .jh-app b,
+html[data-mh="phone"] .jh-note-txt .jh-app--inline b,
+html[data-mh="phone"] .jh-work-disc .dwx,
+html[data-mh="phone"] .jp-tt s,
+html[data-mh="phone"] .m2-apphead .m2-kick,
+html[data-mh="phone"] .m2-plate s,
+html[data-mh="phone"] .m2c-unread,
+html[data-mh="phone"] .m2pw-cap,
+html[data-mh="phone"] .m2pw-heart,
+html[data-mh="phone"] .m2pw-line,
+html[data-mh="phone"] .m2pw-note.is-a,
+html[data-mh="phone"] .m2pw-tags span,
+html[data-mh="phone"] .m2pw-tip,
+html[data-mh="phone"] .m2wb-hint,
+html[data-mh="phone"] .mhchip i,
+html[data-mh="phone"] .sb-chat .m2c-bar .cnt,
+html[data-mh="phone"] .sb-chat .m2c-last s,
+html[data-mh="phone"] .sb-gameboy .caprow .score i,
+html[data-mh="phone"] .sb-gameboy .m2t-line i,
+html[data-mh="phone"] .sb-gameboy .m2t-pill i,
+html[data-mh="phone"] .sb-gameboy .slot--gb.jh-natural-photo .caprow .score i,
+html[data-mh="phone"] .sb-games .m2c-st s,
+html[data-mh="phone"] .sb-instant .slot--special .film,
+html[data-mh="phone"] .sb-instant .slot--special .ph,
+html[data-mh="phone"] .sb-love-stickers .m2bst-cap b,
+html[data-mh="phone"] .sb-love-stickers .m2bst-open,
+html[data-mh="phone"] .sb-music .m2c-tk s,
+html[data-mh="phone"] .sb-persona .m2c-f s,
+html[data-mh="phone"] .sb-private .m2c-wh s,
+html[data-mh="phone"] .sb-rooms .cell2 .cn,
+html[data-mh="phone"] .sb-tools .jh-note-txt .minis .tag,
+html[data-mh="phone"] .slot--gb .bar .name,
+html[data-mh="phone"] .slot--gb .score,
+html[data-mh="phone"] .stamp-row .cs s,
+html[data-mh="phone"] .topbar .tt s,
+html[data-mh="phone"] .ts5-stamp,
+html[data-mh="phone"] .ts5-top{font-family:var(--cn-small)!important}
+/* <<< m2sysfont-small <<< */
+
+
+/* ==========================================================================
+   2026-11-01：手机版「贴边被切」——只改手机版式，平板那套一律不动
+   --------------------------------------------------------------------------
+   实测（430×860，手机版式）：
+     · .screen 内容宽 376，容器只有 370 → 右边 6px 被裁（卡片边、小标签的右缘）
+     · 丝带右缘正好压在 430（屏幕边）→ 看着像被切掉
+     · 分页条离底边只有 8px → 底下那半截贴着屏幕边
+     · 工具行右侧那只小猫用 right:-104px 钉死，视口一宽就跑到屏幕外
+   ========================================================================== */
+html[data-mh="phone"] .screen{padding-right:8px}          /* 给右缘留 8px 呼吸位，不再裁 */
+html[data-mh="phone"] .ribbon{right:2px}                  /* 丝带离屏幕边 2px，右缘看得出来 */
+html[data-mh="phone"] .sdots{bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+/* 小猫改成"紧贴 MCP 那格右边 12px"：不管视口多宽都还在屏幕里 */
+html[data-mh="phone"] .sb-desktools .jh-desk-tools-row > .jh-dtool:nth-child(3)::before{
+  right:auto;left:calc(100% + 12px);
+}
+
+/* ==========================================================================
+   2026-11-01：P3 相册那三张能换图了（以前点了没反应）
+   ========================================================================== */
+html[data-mh="phone"] .sb-gallery .arch{position:relative;overflow:visible}
+html[data-mh="phone"] .m2arch-img{position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;border-radius:inherit;z-index:1}
+html[data-mh="phone"] .sb-gallery .arch.has-arch-img .ph>svg{display:none}
+html[data-mh="phone"] .sb-gallery .arch.has-arch-img .ph{background:transparent}
+html[data-mh="phone"] .m2arch-inp{display:none!important}
+html[data-mh="phone"] .m2arch-chg{position:absolute;right:-8px;top:-8px;z-index:5;
+  width:30px;height:30px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  border:1px solid rgba(190,160,170,.55);background:rgba(255,252,250,.95);color:#9a7784;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  box-shadow:0 2px 8px rgba(150,112,124,.22)}
+html[data-mh="phone"] .m2arch-chg svg{width:15px;height:15px;fill:none;stroke:currentColor;
+  stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+html[data-mh="phone"] .m2arch-chg:active{transform:scale(.94)}
+
+/* ==========================================================================
+   2026-11-01：表情包那张画 —— 透明 input 不再盖住整张卡，改用右上角勾线 ⟳
+   ========================================================================== */
+html[data-mh="phone"] .sb-love-stickers .m2bst{position:relative}
+html[data-mh="phone"] .sb-love-stickers .m2bst-inp{
+  position:absolute!important;left:0!important;top:0!important;
+  width:1px!important;height:1px!important;opacity:0!important;
+  z-index:0!important;pointer-events:none!important;
+}
+html[data-mh="phone"] .sb-love-stickers .m2bst-chg{
+  position:absolute;right:8px;top:8px;z-index:7;width:30px;height:30px;padding:0;
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  border:1px solid rgba(190,160,170,.55);background:rgba(255,252,250,.95);color:#9a7784;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  box-shadow:0 2px 8px rgba(150,112,124,.22);
+}
+html[data-mh="phone"] .sb-love-stickers .m2bst-chg svg{width:15px;height:15px;fill:none;
+  stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+html[data-mh="phone"] .sb-love-stickers .m2bst-chg:active{transform:scale(.94)}
+html[data-mh="phone"] .sb-love-stickers .m2bst-tip{pointer-events:none}
+
+/* 表情包卡：纸卡本身才是点击面；勾线 ⟳ 必须能点（.m2bst 是 pointer-events:none） */
+html[data-mh="phone"] .sb-love-stickers .m2bst-chg{pointer-events:auto!important;z-index:8}
+html[data-mh="phone"] .sb-love-stickers .m2bst-wrap{cursor:pointer}
+
+/* m2-work-card · 桌面那张「工作区」小卡（7.81，只作用于手机版）
+   原来是「相纸 + 两句手写字 + 宝丽来 ×1」，又宽又高；现在只留标题行 + 三件今天的活 + 入口。 */
+html[data-mh="phone"] .jh-note-card.m2-work-card{padding:12px 13px 12px!important;min-height:0!important}
+.jh-note-card .m2work{display:flex;flex-direction:column;gap:7px;min-width:0}
+.jh-note-card .m2work-hd{display:flex;align-items:center;gap:6px}
+.jh-note-card .m2work-ico{width:19px;height:19px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  background:var(--pk1,#f9e9f0);border:1px solid rgba(224,163,188,.55);font-size:11px;line-height:1;color:var(--pk6,#b56a8c)}
+.jh-note-card .m2work-hd b{font-family:var(--cn);font-size:13px;font-weight:400;letter-spacing:.6px;color:var(--ink,#5b4750)}
+.jh-note-card .m2work-hd i{margin-left:auto;font-style:normal;font-family:var(--en-ornate);font-size:9px;letter-spacing:1.4px;color:#b6a5ac}
+.jh-note-card .m2work-list{display:flex;flex-direction:column;gap:5px;min-width:0}
+.jh-note-card .m2work-row{display:flex;align-items:center;gap:7px;min-width:0;
+  font-family:var(--cn);font-size:11.6px;line-height:1.35;color:var(--ink2,#8b7680);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jh-note-card .m2work-row::before{content:'';flex:0 0 9px;width:9px;height:9px;border-radius:2.5px;
+  border:1px solid var(--pk4,#e0a3bc);transform:rotate(-4deg)}
+.jh-note-card .m2work-row.done{color:#b6a5ac;text-decoration:line-through}
+.jh-note-card .m2work-row.done::before{background:var(--pk3,#f0afc8);border-color:var(--pk3,#f0afc8)}
+.jh-note-card .m2work-ft{display:flex;align-items:center;gap:6px;
+  padding-top:6px;border-top:1px dashed rgba(226,182,197,.7);
+  font-family:var(--cn);font-size:10.4px;letter-spacing:.3px;color:#b6a5ac}
+.jh-note-card .m2work-ft u{margin-left:auto;text-decoration:none;color:var(--pk5,#cf84a2);font-size:10.4px}
