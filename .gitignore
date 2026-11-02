@@ -7,3 +7,4 @@ _diag.log
 _diag_server.py
 *.log
 .DS_Store
+_apk/keystore/

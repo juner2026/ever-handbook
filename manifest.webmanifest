@@ -1,0 +1,23 @@
+{
+  "name": "Ever · 手帐",
+  "short_name": "Ever",
+  "description": "Ever 手帐桌面（手机端）",
+  "start_url": "ever.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ],
+  "orientation": "portrait",
+  "background_color": "#fdf4f7",
+  "theme_color": "#fdf4f7",
+  "icons": [
+    {
+      "src": "aset/diary/book-pink.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
