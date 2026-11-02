@@ -61,3 +61,23 @@ node _mobile/smoke.cjs "$PWD/ever.html"   # 冒烟：点按 → 全屏 → 翻�
   需要的话单独发布成 Release 压缩包。
 - 聊天记录 / 贴纸 / 家园布置存在浏览器 localStorage + IndexedDB 里，
   换设备请用「设置 → 导出备份 / 导入备份」。
+
+## 装成 App 的三种方式
+
+1. **添加到主屏幕（PWA，最快）**
+   `https://juner2026.github.io/ever-handbook/ever.html?phone=1` → 浏览器菜单「添加到主屏幕」。
+   manifest 是 `display:fullscreen`，点开没有地址栏。
+
+2. **APK（真 App，离线可用）**
+   - GitHub Release：<https://github.com/juner2026/ever-handbook/releases/tag/v8.07>
+     （457MB，含星露谷美术；签名与 6.21 相同，可直接覆盖安装）
+   - 同 Wi-Fi 的局域网直下：`http://<这台机的IP>:8901/ever-8.07.apk`
+
+3. **自己重打**
+   ```bash
+   python3 _mobile/build.py --install
+   bash _apk/repack-assets.sh 8.08      # 版本号必须 4 个字符
+   ```
+
+> 三者的存储是**互相独立**的（不同 origin / 不同 App）：换之前先在旧的那边
+> 「设置 → 导出备份」，再到新的那边「导入备份」。
