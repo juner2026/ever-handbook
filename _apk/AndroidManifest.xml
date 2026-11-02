@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.tidalecho.app"
+    android:versionCode="1000212"
+    android:versionName="6.19">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <!-- ★ 陪你看屏幕（EverWatchService）：预览小窗 + AI 头像 + 气泡画在所有 App 之上 + 前台录屏服务。
+         Android 14+ 光有 FOREGROUND_SERVICE 不够，mediaProjection 这个类型要单独授权；
+         Android 13+ 常驻通知要有 POST_NOTIFICATIONS（没有也能跑，只是通知看不见）。 -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <application
+        android:label="Ever"
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true"
+        android:hardwareAccelerated="true"
+        android:allowBackup="true"
+        android:supportsRtl="false">
+        <activity android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout|uiMode"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@android:style/Theme.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <!-- 陪你看屏幕：抓屏 + 预览小窗 + AI 头像 + 回复气泡都在这一个服务里。
+             exported=false：只有本应用能起它；foregroundServiceType 决定系统给不给
+             MediaProjection 的 token（Android 14+ 少了这个会直接 SecurityException）。 -->
+        <service android:name=".EverWatchService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection"/>
+    </application>
+</manifest>
