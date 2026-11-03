@@ -2,8 +2,8 @@
   "name": "Ever · 手帐",
   "short_name": "Ever",
   "description": "Ever 手帐桌面（手机端）",
-  "id": "./",
-  "start_url": "./",
+  "id": "./ever.html",
+  "start_url": "./ever.html",
   "scope": "./",
   "display": "fullscreen",
   "display_override": [

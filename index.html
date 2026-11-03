@@ -19,10 +19,12 @@
 <body>
   <div class="n">Ever</div>
   <div class="s">Journal</div>
-  <a href="app.html" id="go">正在进入手帐…</a>
+  <a href="ever.html" id="go">正在进入手帐…</a>
 <script>
-/* 页面拆包以后，入口从 17MB 变成 3.5MB（压缩后约 1.1MB）——开屏能早得多开始。
-   这里只是个几十字节的过门：纸色 + 一行字，立刻跳过去。 */
+/* ★ 8.62 · 全部收口到 ever.html 这一套。
+   之前同时存在 ever.html（单文件）和 app.html+doc.html+js（拆包），
+   index 指向谁都要改，一改就互相覆盖，还踩过"缓存键合并→跳转页自循环→白屏"。
+   现在只有一套：/ → 这个 1.3KB 的过门页 → ever.html。 */
 (function(){
   var t='ever.html';
   try{ if(location.search) t+=location.search; if(location.hash) t+=location.hash; }catch(e){}

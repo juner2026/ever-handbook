@@ -1,27 +1,23 @@
-/* Ever · 网页版 PWA 的 service worker（8.55）
+/* Ever · 网页版 PWA 的 service worker（v8.62 · 定版一套）
    ------------------------------------------------------------------
-   目标三条：
-     1. 打开秒进：ever.html 是 17MB 单文件（Pages gzip 后仍有 9.5MB），绝不能每次重下；
-     2. 发版能立刻看到：只多问一个几十字节的 v.txt，版本变了才拉新的；
-     3. 断网也能看已经加载过的部分。
-
-   策略：
-     · 页面（navigate / ever.html / index.html）
-         → 缓存优先；命中缓存后**只**取 /v.txt（几十字节）比对 BUILD：
-             版本没变 → 直接给缓存（秒开，不再重下 9.5MB）
-             版本变了 → 拉一次新页面、更新缓存，这次就返回新的
-     · 图片/字体/css/js → cache-first
-     · 其它 → 走网络
-
-   ★ 8.55 为什么改：8.54 试过"网络优先"，结果手机上每次打开都重下 9.5MB，
-     慢网下表现就是"卡在开屏"。缓存优先 + 版本探针才是正解。
-
-   发版时改两个地方：VER（换缓存桶，清旧）和 BUILD（必须等于 v.txt 里那行）。
+   一、只有一套产物：ever.html（单文件）+ aset/ + manifest + sw + v.txt。
+      app.html / doc.html / js/ 那套拆包已经下架（文件从仓库删掉），不要再进入口。
+   二、策略：**缓存优先 + 只查 50 字节版本号**
+      · 页面：命中缓存后只取 ./v.txt 比对 BUILD；一样就直接给缓存（秒开），
+        不一样才重新拉一次并更新缓存。这样"发版立刻生效"和"打开不重下 9.5MB"两头都要到了。
+      · 图片/字体/css/js：cache-first。
+   三、发版规矩（缺一个就会重现"每次重下"或"改了看不到"）：
+        1) 换 VER（缓存桶名，旧桶在 activate 清掉）
+        2) BUILD 改成新版本串
+        3) v.txt 写**同一串**（必须一字不差）
+      自验：连开两次，第二次必须 < 5 秒；否则就是这三处没对齐。
 */
-const VER = 'ever-8616';
+const VER = 'ever-862';
 const BUILD = '8.61.6';
 
 const PRECACHE = [
+  './',
+  './ever.html',
   './v.txt',
   './manifest.webmanifest',
   './aset/pwa/icon-192.png',
@@ -45,13 +41,6 @@ self.addEventListener('activate', (e) => {
   })());
 });
 
-/* ★ 8.56：根地址（/ 或 index.html）与 ever.html?v=… 共用**同一个缓存条目**，
-   不然 17MB 的页面会在设备上存两份。内容本来就是同一份（index.html 是 ever.html 的副本）。 */
-/* ★ 8.60.1：不要合并缓存键！
-   之前把「/（1KB 跳转页）」和「app.html（3.5MB 本体）」共用同一个 key，
-   结果缓存里存的是跳转页 → 访问 / 得到跳转页 → 跳到 app.html → 又拿到跳转页 → 死循环白屏。
-   现在每个 URL 各存各的（ignoreSearch 忽略 ?v= 即可）。 */
-
 async function remoteBuild() {
   try {
     const ctl = new AbortController();
@@ -73,34 +62,22 @@ self.addEventListener('fetch', (e) => {
   const isPage = req.mode === 'navigate' ||
                  u.pathname.endsWith('/') ||
                  u.pathname.endsWith('/ever.html') ||
-                 u.pathname.endsWith('/app.html') ||
-                 u.pathname.endsWith('/doc.html') ||
                  u.pathname.endsWith('/index.html');
 
   if (isPage) {
     e.respondWith((async () => {
       const c = await caches.open(VER);
-      /* ★ 8.61.4：先要网络上的最新页面，2.5 秒内拿不到才用缓存。
-         旧逻辑是"缓存优先 + v.txt 探针"：只要 SW 自己还没升级成功，
-         它就一直吐旧页面 —— 用户看到的就是"改了却没变"。 */
-      try {
-        const ctl = new AbortController();
-        const to = setTimeout(() => ctl.abort(), 2500);
-        const r = await fetch(req, { cache: 'no-cache', signal: ctl.signal });
-        clearTimeout(to);
-        if (r && r.ok && /text\/html/i.test(r.headers.get('content-type') || '')) { c.put(req, r.clone()).catch(() => {}); return r; }
-        if (r) return r;
-      } catch (x) {}
+      /* 每个 URL 各存各的：/, /index.html, /ever.html 内容不同，绝不能共用一个 key
+         （共用的那次直接导致了"跳转页自循环 → 白屏"） */
       const hit = await c.match(req, { ignoreSearch: true });
-      if (hit) return hit;
-      return new Response('离线，且这台设备还没缓存过页面。', {
-        status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+      const put = (r) => { if (r && r.ok && /text\/html/i.test(r.headers.get('content-type') || '')) c.put(req, r.clone()).catch(() => {}); };
+      if (!hit) {
+        try { const r = await fetch(req); put(r); return r; }
+        catch (x) { return new Response('离线，且这台设备还没缓存过页面。', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }); }
+      }
       const id = await remoteBuild();
       if (id && id !== BUILD) {
-        try {
-          const r = await fetch(req, { cache: 'no-cache' });
-          if (r && r.ok && /text\/html/i.test(r.headers.get('content-type') || '')) { c.put(req, r.clone()).catch(() => {}); return r; }
-        } catch (x) {}
+        try { const r = await fetch(req, { cache: 'no-cache' }); if (r && r.ok) { put(r); return r; } } catch (x) {}
       }
       return hit;
     })());
@@ -110,15 +87,10 @@ self.addEventListener('fetch', (e) => {
   if (/\.(png|jpe?g|webp|gif|svg|woff2?|ttf|otf|css|js)$/i.test(u.pathname)) {
     e.respondWith((async () => {
       const c = await caches.open(VER);
-      /* ★ 8.6：忽略 ?v= 查询串再找缓存。
-         页面会给 doc.html / js/*.js 拼 ?v=<版本>，之前用精确匹配 → 永远不命中 → 每次重下。 */
       const hit = await c.match(req, { ignoreSearch: true });
       if (hit) return hit;
-      try {
-        const r = await fetch(req);
-        if (r && r.ok) c.put(req, r.clone()).catch(() => {});
-        return r;
-      } catch (x) { return new Response('', { status: 504 }); }
+      try { const r = await fetch(req); if (r && r.ok) c.put(req, r.clone()).catch(() => {}); return r; }
+      catch (x) { return new Response('', { status: 504 }); }
     })());
     return;
   }
