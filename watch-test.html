@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fdf4f7">
+<title>Ever · 看屏幕助手 自检</title>
+<style>
+  :root{--pink:#8a5a6a;--sub:#b58a97;--line:#f0d7e0;--ok:#3f8f5a;--bad:#c04a4a;--warn:#a97b22}
+  html,body{margin:0;background:#fdf4f7;color:#4a3226;
+    font:15px/1.65 -apple-system,"Noto Sans SC",sans-serif}
+  body{padding:18px 16px 60px;max-width:560px;margin:0 auto}
+  h1{font:italic 400 26px/1.3 "Songti SC",Georgia,serif;color:var(--pink);margin:0 0 2px}
+  .sub{font-size:11px;letter-spacing:.34em;color:#c9a3ad;text-transform:uppercase;margin-bottom:16px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;
+    margin:12px 0;box-shadow:0 6px 18px rgba(180,120,140,.08)}
+  .row{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px dashed #f6e3ea}
+  .row:last-child{border-bottom:0}
+  .k{flex:0 0 118px;color:var(--sub);font-size:13px}
+  .v{flex:1;font-size:14px;word-break:break-all}
+  .ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)}
+  code{background:#fdeef3;padding:1px 6px;border-radius:6px;font-size:13px}
+  button{appearance:none;border:0;background:#e9b7ca;color:#fff;font:600 15px/1 inherit;
+    padding:13px 18px;border-radius:12px;width:100%;margin-top:6px}
+  img.shot{width:100%;border-radius:12px;border:1px solid var(--line);margin-top:10px;display:none}
+  ol{margin:6px 0 0;padding-left:20px} li{margin:6px 0}
+  .muted{color:#9a7b85;font-size:13px}
+  pre{background:#fdeef3;padding:10px;border-radius:10px;font-size:12px;overflow:auto;max-height:180px}
+</style>
+</head>
+<body>
+
+<h1>看屏幕助手 · 自检</h1>
+<div class="sub">EVER · WATCH HELPER</div>
+
+<p class="muted">这一页只干一件事：判断<b>你手机上的网页能不能取到本机助手的画面</b>。
+先确认助手那个 App 已经打开、点了「开始共享」，再点下面的按钮。</p>
+
+<div class="card" id="out">
+  <div class="row"><div class="k">安全上下文</div><div class="v" id="sec">…</div></div>
+  <div class="row"><div class="k">/probe.jpg</div><div class="v" id="probe">…</div></div>
+  <div class="row"><div class="k">/meta</div><div class="v" id="meta">…</div></div>
+  <div class="row"><div class="k">/frame.jpg</div><div class="v" id="frame">…</div></div>
+  <div class="row"><div class="k">结论</div><div class="v" id="verdict">…</div></div>
+</div>
+
+<button id="go">重新检测</button>
+
+<div class="card">
+  <b>三种结果怎么读</b>
+  <ol>
+    <li><span class="ok">全绿</span>：网页能直接取帧 —— 把 <code>/meta</code> 里那行发我就行，我去接。</li>
+    <li><span class="bad">probe 超时 / 报错</span>：<b>助手没在听</b>（没开共享、被系统停了、或端口变了）。先去助手界面看那行状态。</li>
+    <li><span class="warn">probe 通、frame 空</span>：助手在听但<b>没抓到帧</b>，多半是「开始共享」没授权成功 —— 静止画面不给帧是正常的，动一下屏幕再看。</li>
+    <li><span class="warn">被浏览器拦住</span>（提示 mixed content / 本地网络）：这是 Chrome 对「https 页面访问 127.0.0.1」的限制，
+      看地址栏有没有<b>「本地网络访问」</b>的权限气泡，允许后重试。</li>
+  </ol>
+</div>
+
+<div class="card">
+  <b>助手的三个端点（给以后自己实现的人）</b>
+  <pre>GET http://127.0.0.1:8899/probe.jpg   2×2 占位图，能显示=服务在听
+GET http://127.0.0.1:8899/meta        {w,h,ts,frames,capturing,has_frame,err}
+GET http://127.0.0.1:8899/frame.jpg   最新一帧 JPEG（没帧时返回占位图，不是 503）</pre>
+  <p class="muted" style="margin:8px 0 0">全部带 <code>Access-Control-Allow-Origin: *</code>。</p>
+</div>
+
+<img class="shot" id="shot" alt="助手最新一帧">
+
+<script>
+(function(){
+  var BASE = 'http://127.0.0.1:8899';
+  var $ = function(id){ return document.getElementById(id); };
+  function set(id, cls, html){ var el=$(id); el.className='v'+(cls?' '+cls:''); el.innerHTML=html; }
+  function esc(s){ return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+
+  /* 探活：<img> + 硬超时。别用 fetch —— 8.52 踩过，到 127.0.0.1 的 fetch 可能既不 resolve 也不 reject */
+  function probeImg(url, ms){
+    return new Promise(function(resolve){
+      var done=false, img=new Image(), t0=Date.now();
+      var timer=setTimeout(function(){ if(!done){ done=true; resolve({ok:false, why:'超时 '+(Date.now()-t0)+'ms', ms:Date.now()-t0}); } }, ms);
+      img.onload=function(){ if(done) return; done=true; clearTimeout(timer);
+        resolve({ok:true, w:img.naturalWidth, h:img.naturalHeight, ms:Date.now()-t0}); };
+      img.onerror=function(){ if(done) return; done=true; clearTimeout(timer);
+        resolve({ok:false, why:'onerror（连不上或被拦）', ms:Date.now()-t0}); };
+      img.src = url + '?t=' + Date.now();
+    });
+  }
+
+  async function meta(ms){
+    var ctl = new AbortController();
+    var timer = setTimeout(function(){ try{ctl.abort();}catch(e){} }, ms);
+    try{
+      var r = await fetch(BASE + '/meta?t=' + Date.now(), {signal: ctl.signal, mode:'cors'});
+      clearTimeout(timer);
+      var txt = await r.text();
+      return {ok:true, status:r.status, body:txt};
+    }catch(e){
+      clearTimeout(timer);
+      return {ok:false, why:(e && (e.name + ': ' + e.message)) || String(e)};
+    }
+  }
+
+  async function run(){
+    $('shot').style.display='none';
+    set('sec', '', window.isSecureContext ? '<span class="ok">是</span>（'+location.protocol+'）'
+      : '<span class="warn">否</span>（'+location.protocol+'）—— 麦克风之类会不可用，但取帧不受影响');
+    set('probe','','检测中…'); set('meta','','检测中…'); set('frame','','检测中…'); set('verdict','','…');
+
+    var pr = await probeImg(BASE + '/probe.jpg', 3500);
+    if(pr.ok){
+      set('probe','ok','<span class="ok">通</span> · ' + pr.w + '×' + pr.h + ' · ' + pr.ms + 'ms · 服务在听');
+    }else{
+      set('probe','bad','<span class="bad">不通</span> · ' + esc(pr.why) + ' · ' + pr.ms + 'ms');
+    }
+
+    var mr = await meta(3500);
+    var m = null;
+    if(mr.ok){
+      try{ m = JSON.parse(mr.body); }catch(e){}
+      set('meta','ok','<span class="ok">通</span> · ' + esc(mr.body.slice(0,220)));
+    }else{
+      set('meta','bad','<span class="bad">不通</span> · ' + esc(mr.why));
+    }
+
+    var fr = await probeImg(BASE + '/frame.jpg', 4000);
+    if(fr.ok){
+      set('frame','ok','<span class="ok">通</span> · ' + fr.w + '×' + fr.h + ' · ' + fr.ms + 'ms');
+      var s=$('shot'); s.src = BASE + '/frame.jpg?t=' + Date.now(); s.style.display='block';
+    }else{
+      set('frame','bad','<span class="bad">不通</span> · ' + esc(fr.why));
+    }
+
+    var v = '';
+    if(pr.ok && fr.ok){
+      v = '<span class="ok">✓ 网页能直接取帧</span> —— 把上面 /meta 那行（capturing / frames / err）发我，我来接进「陪你看屏幕」。';
+    }else if(!pr.ok){
+      v = '<span class="bad">✗ 网页够不到助手</span>。先看：① 助手 App 是否打开并点了「开始共享」；'+
+          '② 助手界面那行状态是「未开始 / 服务已启动 / 已抓 N 帧」；③ 浏览器有没有弹「本地网络访问」权限，允许后重试。'+
+          '如果一直不通，就是 Chrome 对 https→127.0.0.1 的限制，需要给助手加自签 https。';
+    }else if(pr.ok && !fr.ok){
+      v = '<span class="warn">助手在听，但取不到画面</span>。多半是「开始共享」没授权成功，或者画面静止还没出帧 —— 动一下屏幕再点一次。';
+    }
+    if(mr.ok && m && m.capturing === false){
+      v += '<br><span class="warn">/meta 说 capturing=false</span>：录屏授权没给到或前台服务被系统掐了。';
+    }
+    set('verdict','', v);
+  }
+
+  $('go').addEventListener('click', function(){ run(); });
+  run();
+})();
+</script>
+</body>
+</html>
