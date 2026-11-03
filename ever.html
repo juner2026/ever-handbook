@@ -22,7 +22,7 @@
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdf5f3">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2a1c22">
 <title>Ever</title>
-<script>window.__everVer="8.53-20261103-0356-mobile";</script>
+<script>window.__everVer="8.53-20261103-0413-mobile";</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'PingFang SC','Hiragino Sans GB',sans-serif}
@@ -19046,6 +19046,19 @@ function callChatAPI(userText,holderId,tpId,_try,_cont){
       return {role:_fixRole(m.role),content:m.content};
     }))
     .concat(_intentHint ? [{role:'system',content:_intentHint}] : [])
+    /* ★ 8.53：现场信息（她这会儿在 Ever 里干什么）。
+       为什么不用截屏：手机浏览器没有 getDisplayMedia，连续看屏做不了；
+       而"她在哪一页、手帐三卡是多少、草稿写到一半写了什么"这些页面本来就知道，
+       序列化成几十个字塞给模型，比截图更准、还不占带宽。
+       开关：localStorage['te-eyes']='0' 关掉；window.teEyesSet(false) 也可以。 */
+    .concat((function(){
+      try{
+        if(window.teEyesOn===false) return [];
+        if(typeof window.teEyes!=='function') return [];
+        var _eye=window.teEyes();
+        return _eye ? [{role:'system',content:_eye}] : [];
+      }catch(e){ return []; }
+    })())
     .concat([{role:'user',content:_ucFinal}]);
   /* ★ 6.62 续跑：如果历史最后一条本来就是 user（工具回执 / 召回结果），
      就把"接着写"那句并进去 —— 不制造连续两条 user（有的服务会直接 422）。 */
@@ -61797,6 +61810,58 @@ html body.te-night #p-set#p-set.has-setwp .st2-nav{
     }
     return false;
   }
+  /* ============================================================
+     ★ 8.53 「AI 知道你在我看什么」—— 现场信息
+     ------------------------------------------------------------
+     只读本地状态，不发任何网络请求；内容随每条消息一起交给模型。
+     关掉：window.teEyesSet(false)（或 localStorage['te-eyes']='0'）
+     ============================================================ */
+  window.teEyesOn = (function(){
+    try{ return localStorage.getItem('te-eyes') !== '0'; }catch(e){ return true; }
+  })();
+  window.teEyesSet = function(on){
+    try{ localStorage.setItem('te-eyes', on ? '1' : '0'); }catch(e){}
+    window.teEyesOn = !!on;
+    return window.teEyesOn;
+  };
+  window.teEyes = function(){
+    try{
+      var L = [];
+      var on = document.querySelector('.pg.on');
+      var pid = on ? String(on.id || '').replace(/^p-/, '') : '';
+      var NM = {home:'桌面手帐',chat:'聊天',diary:'日记',set:'设置',api:'接口设置',mcp:'MCP',
+                music:'音乐',star:'星海',map:'地图',heatmap:'热力图'};
+      var d = new Date(), hh = d.getHours();
+      var slot = hh < 5 ? '深夜' : hh < 9 ? '清晨' : hh < 12 ? '上午' : hh < 14 ? '中午'
+               : hh < 18 ? '下午' : hh < 23 ? '晚上' : '深夜';
+      var wk = ['日','一','二','三','四','五','六'][d.getDay()];
+      var two = function(n){ return (n < 10 ? '0' : '') + n; };
+      L.push('【她这会儿在 Ever 里做什么】（系统自动附带的现场信息，不是她打的字；看不到就别装作看得见细节）');
+      L.push('页面：' + (NM[pid] || pid || '未知') +
+             ' · ' + slot + ' ' + (d.getMonth() + 1) + '月' + d.getDate() + '日 周' + wk +
+             ' ' + two(d.getHours()) + ':' + two(d.getMinutes()));
+      try{
+        var st = JSON.parse(localStorage.getItem('te_room_editor_v3') || 'null');
+        var s = (st && st.stats) || null;
+        if (s) {
+          L.push('她的状态：心情 ' + Math.round(s.mood || 0) + '% · 体力 ' + Math.round(s.hp || 0) +
+                 '% · 金币 ' + Math.round(s.coins || s.coin || 0));
+        }
+      }catch(e){}
+      try{
+        var n = (window._momDraftImgs || []).length;
+        if (n) L.push('明信片草稿里已经放了 ' + n + ' 张图');
+      }catch(e){}
+      try{
+        var ci = document.getElementById('chatIn');
+        if (ci && ci.value && String(ci.value).trim()) {
+          L.push('聊天输入框里正写到一半：「' + String(ci.value).trim().slice(0, 60) + '」');
+        }
+      }catch(e){}
+      return L.join('\n');
+    }catch(e){ return ''; }
+  };
+
   window.teBack = function () {
     try {
       if (closeTop()) return true;
