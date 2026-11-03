@@ -66,14 +66,18 @@ self.addEventListener('fetch', (e) => {
   if (isPage) {
     e.respondWith((async () => {
       const c = await caches.open(VER);
+      /* ★ 8.63：用**固定字符串 key** 存页面。
+         之前拿 navigate 型 Request 当 key 去 put，实测写不进去（Cache Storage 里只有预缓存那几项），
+         于是每次都判定缓存未命中 → 重下 9.5MB。字符串 key 实测能存 17MB。 */
+      const CANON = new URL('./ever.html', self.location).href;
       /* 每个 URL 各存各的：/, /index.html, /ever.html 内容不同，绝不能共用一个 key
          （共用的那次直接导致了"跳转页自循环 → 白屏"） */
-      const hit = await c.match(req, { ignoreSearch: true });
+      const hit = (await c.match(CANON)) || (await c.match(req, { ignoreSearch: true }));
       const put = (r) => {
         if (!(r && r.ok && /text\/html/i.test(r.headers.get('content-type') || ''))) return;
         /* ★ 8.63：**必须 waitUntil**。不挂上去，SW 的 fetch 事件一结束，
            put 的写入就被掐断 —— 表现是"SW 是控制中，但页面永远命中不了缓存，每次重下 9.5MB"。 */
-        const job = c.put(req, r.clone()).catch(() => {});
+        const job = c.put(CANON, r.clone()).catch(() => {});
         try { e.waitUntil(job); } catch (x) {}
       };
       if (!hit) {
