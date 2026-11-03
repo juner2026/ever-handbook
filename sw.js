@@ -81,7 +81,7 @@ self.addEventListener('fetch', (e) => {
     e.respondWith((async () => {
       const c = await caches.open(VER);
       const key = new Request(PAGE_KEY);
-      const hit = await c.match(key);
+      const hit = await c.match(key, { ignoreSearch: true });
       if (!hit) {
         try {
           const r = await fetch(req);
@@ -107,7 +107,9 @@ self.addEventListener('fetch', (e) => {
   if (/\.(png|jpe?g|webp|gif|svg|woff2?|ttf|otf|css|js)$/i.test(u.pathname)) {
     e.respondWith((async () => {
       const c = await caches.open(VER);
-      const hit = await c.match(req);
+      /* ★ 8.6：忽略 ?v= 查询串再找缓存。
+         页面会给 doc.html / js/*.js 拼 ?v=<版本>，之前用精确匹配 → 永远不命中 → 每次重下。 */
+      const hit = await c.match(req, { ignoreSearch: true });
       if (hit) return hit;
       try {
         const r = await fetch(req);
