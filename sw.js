@@ -18,12 +18,13 @@
 
    发版时改两个地方：VER（换缓存桶，清旧）和 BUILD（必须等于 v.txt 里那行）。
 */
-const VER = 'ever-859';
-const BUILD = '8.53-20261103-0702';
+const VER = 'ever-860';
+const BUILD = '8.59-split';
 
 const PRECACHE = [
   './',
-  './ever.html',
+  './app.html',
+  './doc.html',
   './v.txt',
   './manifest.webmanifest',
   './aset/pwa/icon-192.png',
@@ -49,7 +50,7 @@ self.addEventListener('activate', (e) => {
 
 /* ★ 8.56：根地址（/ 或 index.html）与 ever.html?v=… 共用**同一个缓存条目**，
    不然 17MB 的页面会在设备上存两份。内容本来就是同一份（index.html 是 ever.html 的副本）。 */
-const PAGE_KEY = new URL('./ever.html', self.location).href;
+const PAGE_KEY = new URL('./app.html', self.location).href;
 
 async function remoteBuild() {
   try {
@@ -72,6 +73,8 @@ self.addEventListener('fetch', (e) => {
   const isPage = req.mode === 'navigate' ||
                  u.pathname.endsWith('/') ||
                  u.pathname.endsWith('/ever.html') ||
+                 u.pathname.endsWith('/app.html') ||
+                 u.pathname.endsWith('/doc.html') ||
                  u.pathname.endsWith('/index.html');
 
   if (isPage) {
