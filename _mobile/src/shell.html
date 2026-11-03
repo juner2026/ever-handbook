@@ -60181,7 +60181,10 @@ html body.te-night #p-set.has-setwp .st2-veil{background:linear-gradient(180deg,
             var du=cv.toDataURL('image/jpeg',0.82);
             var f2=document.getElementById('jh-frame');
             if(f2&&f2.contentWindow) f2.contentWindow.postMessage({t:'jh:img',key:d.key||'scene',url:du},'*');
-            try{ toast('换好了 ♡'); }catch(x){}
+            /* 8.61.6: also save in the shell (real origin), not only inside the srcdoc iframe */
+            try{ if(!d.key||d.key==='scene') saveImg('desk_scene', du); }catch(x){}
+            try{ localStorage.setItem('te2_m2img_scene', du); }catch(x){}
+            try{ toast('换好了，已存进这台设备 ♡'); }catch(x){}
           }catch(x){}
           try{ URL.revokeObjectURL(url); }catch(x){}
         };
@@ -60190,6 +60193,38 @@ html body.te-night #p-set.has-setwp .st2-veil{background:linear-gradient(180deg,
       };
       try{ inp.click(); }catch(e){}
     });
+  }catch(e){}
+})();
+</script>
+<script id="r816-desk-scene">
+/* 8.61.6 · 桌面那张画的恢复交给外壳（真 origin）
+   iframe 里的 localStorage 在部分 WebView 上会抛 SecurityError，存进去等于没存。
+   外壳是 https 真 origin，存得住。这里进页面读回来，反复推给桌面（那张卡要等 m2-apps 建完）。 */
+(function(){
+  try{
+    if(window.__r816DeskScene) return;
+    window.__r816DeskScene=1;
+    function push(u){
+      var f=document.getElementById('jh-frame');
+      if(!f||!f.contentWindow) return;
+      try{ f.contentWindow.postMessage({t:'jh:img',key:'scene',url:u},'*'); }catch(x){}
+    }
+    function boot(){
+      var u='';
+      try{ u=localStorage.getItem('te2_m2img_scene')||''; }catch(x){}
+      if(u){ start(u); return; }
+      try{
+        loadImg('desk_scene').then(function(v){ if(v) start(v); });
+      }catch(x){}
+    }
+    function start(u){
+      try{ setTimeout(function(){ toast('上次换的那张画，找回来了 ♡'); }, 2600); }catch(x){}
+      var n=0, tick=setInterval(function(){
+        n++; push(u);
+        if(n>=24) clearInterval(tick);
+      },500);
+    }
+    setTimeout(boot, 900);
   }catch(e){}
 })();
 </script>
