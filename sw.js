@@ -80,17 +80,21 @@ self.addEventListener('fetch', (e) => {
   if (isPage) {
     e.respondWith((async () => {
       const c = await caches.open(VER);
+      /* ★ 8.61.4：先要网络上的最新页面，2.5 秒内拿不到才用缓存。
+         旧逻辑是"缓存优先 + v.txt 探针"：只要 SW 自己还没升级成功，
+         它就一直吐旧页面 —— 用户看到的就是"改了却没变"。 */
+      try {
+        const ctl = new AbortController();
+        const to = setTimeout(() => ctl.abort(), 2500);
+        const r = await fetch(req, { cache: 'no-cache', signal: ctl.signal });
+        clearTimeout(to);
+        if (r && r.ok && /text\/html/i.test(r.headers.get('content-type') || '')) { c.put(req, r.clone()).catch(() => {}); return r; }
+        if (r) return r;
+      } catch (x) {}
       const hit = await c.match(req, { ignoreSearch: true });
-      if (!hit) {
-        try {
-          const r = await fetch(req);
-          if (r && r.ok && /text\/html/i.test(r.headers.get('content-type') || '')) c.put(req, r.clone()).catch(() => {});
-          return r;
-        } catch (x) {
-          return new Response('离线，且这台设备还没缓存过页面。', {
-            status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
-        }
-      }
+      if (hit) return hit;
+      return new Response('离线，且这台设备还没缓存过页面。', {
+        status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
       const id = await remoteBuild();
       if (id && id !== BUILD) {
         try {
