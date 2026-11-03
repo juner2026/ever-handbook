@@ -22,7 +22,7 @@
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdf5f3">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2a1c22">
 <title>Ever</title>
-<script>window.__everVer="8.53-20261103-0512-mobile";</script>
+<script>window.__everVer="8.53-20261103-0523-mobile";</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'PingFang SC','Hiragino Sans GB',sans-serif}
@@ -61997,24 +61997,67 @@ html body.te-night #p-set#p-set.has-setwp .st2-nav{
   H.imgProbe = imgProbe;
   H.imgProbeAt = imgProbeAt;
 
-  H.probe = function () {
-    var base = H.base();
-    return new Promise(function (resolve) {
-      imgProbe(base, 4000, function (ok, how) {
-        if (!ok) { H.alive = false; resolve(null); return; }
-        /* ★ 8.51：**能拿到帧就算通，立刻 resolve**。
-           以前这里还要等一次 fetch('/meta') 才 resolve —— 而 fetch 恰恰是可能挂住的那条路，
-           结果弹框永远停在"正在连接"。meta 只是附送信息，单独去取，取不到也不影响判定。 */
-        H.alive = true;
-        H.via = how || '';
-        resolve({ ok: 1, via: H.via });
-        try {
-          fetch(base + '/meta', { cache: 'no-store' })
-            .then(function (r) { return r.json(); })
-            .then(function (m) { H.meta = m; })
-            .catch(function () {});
-        } catch (e) {}
+  /* ★ 8.54：探路改成「候选地址 × 三段接口」，并且每一步都记日志。
+     起因：用户那边自检页显示"已连上"，回到设置点开启却报"连不上" ——
+     只有一句"连不上"根本没法判断是端口不通、服务没在听、还是帧还没出来。
+     现在：127.0.0.1 与 localhost 都试；每段都试 /probe.jpg → /frame.jpg → /meta；
+     失败时把 H.lastLog 显示在弹框里（例如 "127.0.0.1:8899 ✗ 超时 · localhost:8899 ✗ 超时"）。 */
+  H.candidates = function () {
+    var b = H.base(), out = [b];
+    try {
+      var u = new URL(b);
+      if (u.hostname === '127.0.0.1') out.push(b.replace('127.0.0.1', 'localhost'));
+      else if (u.hostname === 'localhost') out.push(b.replace('localhost', '127.0.0.1'));
+    } catch (e) {}
+    return out;
+  };
+
+  /* 单地址探一次：probe.jpg → frame.jpg → meta(fetch，带 abort 兜底) */
+  H.tryOnce = function (base) {
+    return new Promise(function (res) {
+      var t0 = Date.now();
+      imgProbeAt(base + '/probe.jpg', 4000, function (ok1) {
+        if (ok1) { res({ ok: true, how: 'probe', base: base, ms: Date.now() - t0 }); return; }
+        imgProbeAt(base + '/frame.jpg', 4000, function (ok2) {
+          if (ok2) { res({ ok: true, how: 'frame', base: base, ms: Date.now() - t0 }); return; }
+          var done = false, ctl = null, timer = 0;
+          var fin = function (o) { if (done) return; done = true; clearTimeout(timer); o.base = base; o.ms = Date.now() - t0; res(o); };
+          timer = setTimeout(function () { try { ctl && ctl.abort(); } catch (e) {} fin({ ok: false, how: 'none', err: '全超时' }); }, 2500);
+          try {
+            ctl = window.AbortController ? new AbortController() : null;
+            fetch(base + '/meta?t=' + Date.now(), { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
+              .then(function (r) { return r.text().then(function (t) { return { code: r.status, body: t }; }); })
+              .then(function (o) { fin({ ok: o.code >= 200 && o.code < 300, how: 'meta', err: 'HTTP ' + o.code, meta: o.body }); })
+              .catch(function (e) { fin({ ok: false, how: 'none', err: String((e && e.name) || e) }); });
+          } catch (e) { fin({ ok: false, how: 'none', err: String(e) }); }
+        });
       });
+    });
+  };
+
+  H.probe = function () {
+    var cands = H.candidates();
+    var log = [];
+    return new Promise(function (resolve) {
+      var i = 0;
+      var step = function () {
+        if (i >= cands.length) {
+          H.alive = false; H.lastLog = log.join(' · ');
+          resolve(null); return;
+        }
+        var b = cands[i++];
+        H.tryOnce(b).then(function (r) {
+          var host = b.replace(/^https?:\/\//, '');
+          log.push(host + ' ' + (r.ok ? ('✓' + r.how + ' ' + r.ms + 'ms') : ('✗' + (r.err || '超时'))));
+          if (r.ok) {
+            H.alive = true; H.via = r.how; H.baseUsed = b; H.lastLog = log.join(' · ');
+            resolve({ ok: 1, via: r.how, base: b });
+            return;
+          }
+          step();
+        });
+      };
+      step();
     });
   };
 
@@ -62147,25 +62190,21 @@ html body.te-night #p-set#p-set.has-setwp .st2-nav{
     var v = el ? String(el.value || '').trim().replace(/\/+$/, '') : H.base();
     var st = document.getElementById('teWhState');
     if (st) st.textContent = '测试中…';
-    var finished = false;
-    var settle = function (ok) {
-      if (finished) return; finished = true;
-      H.alive = ok;
-      if (st) st.textContent = ok ? ('● 已连接' + (H.via === 'probe' ? '（服务在听，等第一帧）' : '') + (H.meta && H.meta.w ? ('（' + H.meta.w + '×' + H.meta.h + '）') : ''))
-                                  : '○ 连不上：先打开「Ever 看屏幕」并点开始共享';
-      try { if (typeof toast0 === 'function') toast0(ok ? ('连上了：' + v) : ('连不上 ' + v)); } catch (e) {}
-    };
-    /* 5 秒兜底：UI 绝不能停在"测试中…" */
-    setTimeout(function () { settle(false); }, 5000);
-    imgProbe(v, 4000, function (ok, how) {
-      if (!ok) { settle(false); return; }
-      H.via = how || '';
-      fetch(v + '/meta', { cache: 'no-store' })
-        .then(function (r) { return r.json(); })
-        .then(function (m) { H.meta = m; settle(true); })
-        .catch(function () { settle(true); });
+    H.probe().then(function (m) {
+      H.meta = null;
+      if (m && m.meta) { try { H.meta = JSON.parse(m.meta); } catch (e) {} }
+      if (m) {
+        if (st) st.textContent = '● 已连接' + (m.via === 'probe' ? '（服务在听，等第一帧）' : '') + ' · ' + (H.lastLog || '');
+        try { if (typeof toast0 === 'function') toast0('连上了：' + (H.baseUsed || v)); } catch (e) {}
+        try { fetch((H.baseUsed || v) + '/meta', { cache: 'no-store' }).then(function (r) { return r.json(); })
+                .then(function (j) { H.meta = j; }).catch(function () {}); } catch (e) {}
+      } else {
+        if (st) st.textContent = '○ 连不上 · ' + (H.lastLog || '都超时了');
+        try { if (typeof toast0 === 'function') toast0('连不上：' + (H.lastLog || v)); } catch (e) {}
+      }
     });
   };
+
 
   /* 页面起来先探一次：探到了，设置里那个开关就不会再弹「只在 App 里能用」 */
   setTimeout(function () { H.probe(); }, 1500);
