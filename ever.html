@@ -22,7 +22,7 @@
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdf5f3">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2a1c22">
 <title>Ever</title>
-<script>window.__everVer="8.53-20261103-0413-mobile";</script>
+<script>window.__everVer="8.53-20261103-0512-mobile";</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'PingFang SC','Hiragino Sans GB',sans-serif}
@@ -61972,26 +61972,42 @@ html body.te-night #p-set#p-set.has-setwp .st2-nav{
      原因：fetch 在某些环境下会既不 resolve 也不 reject（https 页面取 http://127.0.0.1、
      私有网络策略、混合内容），页面就永远停在"测试中…"。
      <img> 不需要 CORS 预检，而且这里带硬超时 —— 只有"连上了/连不上"两种结局。 */
-  function imgProbe(base, timeoutMs, cb) {
+  function imgProbeAt(url, timeoutMs, cb) {
     var done = false, img = new Image();
-    var t = setTimeout(function () { if (!done) { done = true; cb(false); } }, timeoutMs || 2500);
+    var t = setTimeout(function () { if (!done) { done = true; cb(false); } }, timeoutMs || 4000);
     img.onload = function () { if (!done) { done = true; clearTimeout(t); cb(true); } };
     img.onerror = function () { if (!done) { done = true; clearTimeout(t); cb(false); } };
-    try { img.src = base + '/frame.jpg?t=' + Date.now(); }
+    try { img.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now(); }
     catch (e) { if (!done) { done = true; clearTimeout(t); cb(false); } }
   }
+
+  /* ★ 8.53：判"连上没连上"改成两段探路。
+     为什么：原来只拿 /frame.jpg 判，而助手是**每 2 秒才产一帧**、手机上编码一帧也要时间，
+     2.5 秒的超时经常正好卡在边界 —— 用户在自检页看到全绿，回到设置点「开启」却报"连不上"。
+     现在先探 /probe.jpg（2×2 占位图，秒回、专门用来判"服务在不在听"），
+     没有这个端点的老版本再退回 /frame.jpg。超时也从 2.5s 放宽到 4s。 */
+  function imgProbe(cbOrBase, a2, a3) {
+    /* 兼容老调用 imgProbe(base, timeout, cb) */
+    var base = cbOrBase, timeoutMs = a2, cb = a3;
+    imgProbeAt(base + '/probe.jpg', timeoutMs, function (ok) {
+      if (ok) return cb(true, 'probe');
+      imgProbeAt(base + '/frame.jpg', timeoutMs, function (ok2) { cb(ok2, ok2 ? 'frame' : 'none'); });
+    });
+  }
   H.imgProbe = imgProbe;
+  H.imgProbeAt = imgProbeAt;
 
   H.probe = function () {
     var base = H.base();
     return new Promise(function (resolve) {
-      imgProbe(base, 2500, function (ok) {
+      imgProbe(base, 4000, function (ok, how) {
         if (!ok) { H.alive = false; resolve(null); return; }
         /* ★ 8.51：**能拿到帧就算通，立刻 resolve**。
            以前这里还要等一次 fetch('/meta') 才 resolve —— 而 fetch 恰恰是可能挂住的那条路，
            结果弹框永远停在"正在连接"。meta 只是附送信息，单独去取，取不到也不影响判定。 */
         H.alive = true;
-        resolve({ ok: 1 });
+        H.via = how || '';
+        resolve({ ok: 1, via: H.via });
         try {
           fetch(base + '/meta', { cache: 'no-store' })
             .then(function (r) { return r.json(); })
@@ -62135,14 +62151,15 @@ html body.te-night #p-set#p-set.has-setwp .st2-nav{
     var settle = function (ok) {
       if (finished) return; finished = true;
       H.alive = ok;
-      if (st) st.textContent = ok ? ('● 已连接' + (H.meta && H.meta.w ? ('（' + H.meta.w + '×' + H.meta.h + '）') : ''))
+      if (st) st.textContent = ok ? ('● 已连接' + (H.via === 'probe' ? '（服务在听，等第一帧）' : '') + (H.meta && H.meta.w ? ('（' + H.meta.w + '×' + H.meta.h + '）') : ''))
                                   : '○ 连不上：先打开「Ever 看屏幕」并点开始共享';
       try { if (typeof toast0 === 'function') toast0(ok ? ('连上了：' + v) : ('连不上 ' + v)); } catch (e) {}
     };
     /* 5 秒兜底：UI 绝不能停在"测试中…" */
     setTimeout(function () { settle(false); }, 5000);
-    imgProbe(v, 2500, function (ok) {
+    imgProbe(v, 4000, function (ok, how) {
       if (!ok) { settle(false); return; }
+      H.via = how || '';
       fetch(v + '/meta', { cache: 'no-store' })
         .then(function (r) { return r.json(); })
         .then(function (m) { H.meta = m; settle(true); })
