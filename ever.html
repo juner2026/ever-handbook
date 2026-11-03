@@ -22,7 +22,7 @@
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdf5f3">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2a1c22">
 <title>Ever</title>
-<script>window.__everVer="8.53-20261103-0531-mobile";</script>
+<script>window.__everVer="8.53-20261103-0604-mobile";</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'PingFang SC','Hiragino Sans GB',sans-serif}
@@ -61965,12 +61965,26 @@ html body.te-night #p-set#p-set.has-setwp .st2-nav{
 
   /* ★ 8.50：地址可在「设置 → 看屏幕助手 · 地址」里改（默认 127.0.0.1:8899）。
      以前小助手让你「复制地址」，网页却没地方填 —— 现在有了。 */
+  /* ★ 8.57：地址归一化。
+     用户很自然会把小助手「复制地址」里那条完整的 URL 直接粘进来 ——
+     而那是 MJPEG 流地址 …:8899/stream（或 …/frame.jpg、…/probe.jpg、…/meta），
+     带着路径去拼 /probe.jpg 就变成 …/stream/probe.jpg，必然全超时。
+     实测截图里就是这样：地址框写着 http://127.0.0.1:8899/stream，诊断行报"✗全超时"。
+     这里统一收敛成 host:port。 */
+  H.norm = function (v) {
+    v = String(v || '').trim();
+    if (!v) return 'http://127.0.0.1:8899';
+    if (!/^https?:\/\//i.test(v)) v = 'http://' + v;
+    v = v.replace(/\/+$/, '');
+    v = v.replace(/\/(stream|stream\.mjpg|frame|frame\.jpg|probe\.jpg|meta|index\.html?)$/i, '');
+    v = v.replace(/\/+$/, '');
+    return v;
+  };
+
   H.base = function () {
     var v = '';
     try { v = localStorage.getItem('te_watch_base') || ''; } catch (e) {}
-    v = String(v || '').trim();
-    if (!v) v = 'http://127.0.0.1:8899';
-    return v.replace(/\/+$/, '');
+    return H.norm(v);
   };
 
   /* ★ 8.51：探路从 fetch 改成 <img>。
@@ -62180,8 +62194,8 @@ html body.te-night #p-set#p-set.has-setwp .st2-nav{
   /* 设置页的两个按钮 */
   window.teWatchSaveBase = function () {
     var el = document.getElementById('teWhBase');
-    var v = el ? String(el.value || '').trim() : '';
-    v = v.replace(/\/+$/, '');
+    var v = H.norm(el ? el.value : '');
+    if (el) { try { el.value = v; } catch (e) {} }   /* 归一化后的地址回写，用户看得到 */
     try { localStorage.setItem('te_watch_base', v); } catch (e) {}
     H.alive = false;
     H.probe().then(function (m) {
@@ -62192,7 +62206,8 @@ html body.te-night #p-set#p-set.has-setwp .st2-nav{
   };
   window.teWatchTest = function () {
     var el = document.getElementById('teWhBase');
-    var v = el ? String(el.value || '').trim().replace(/\/+$/, '') : H.base();
+    var v = el ? H.norm(el.value) : H.base();
+    if (el) { try { el.value = v; } catch (e) {} }
     var st = document.getElementById('teWhState');
     if (st) st.textContent = '测试中…';
     H.probe().then(function (m) {
