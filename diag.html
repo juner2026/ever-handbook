@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ever · 自检</title>
+<style>
+  html,body{margin:0;background:#fffdfa;color:#3a2a30;
+    font:14px/1.6 -apple-system,"Noto Sans SC",sans-serif}
+  .w{max-width:560px;margin:0 auto;padding:14px 14px 40px}
+  h1{font:italic 400 22px/1.3 "Songti SC",Georgia,serif;color:#8a5a6a;margin:0 0 8px}
+  .row{background:#fff;border:1px solid #eed6e0;border-radius:10px;padding:9px 11px;margin:7px 0;
+    font-size:13px;word-break:break-all}
+  .k{color:#a98a90;font-size:12px}
+  .ok{color:#2f7d4f;font-weight:700}.bad{color:#b83b3b;font-weight:700}.wait{color:#9a7b85}
+  button{width:100%;padding:12px;border:0;border-radius:10px;background:#e9b7ca;color:#fff;
+    font:600 15px/1 inherit;margin-top:10px}
+  iframe{width:100%;height:320px;border:1px solid #eed6e0;border-radius:10px;background:#fdf4f7;margin-top:10px}
+  .big{font-size:15px}
+</style>
+</head>
+<body><div class="w">
+<h1>Ever · 自检</h1>
+<div class="row big" id="verdict">正在检查…（大约 40 秒，别关掉）</div>
+
+<div class="row"><span class="k">浏览器</span><br><span id="ua">—</span></div>
+<div class="row"><span class="k">环境</span><br><span id="env">—</span></div>
+<div class="row"><span class="k">Service Worker</span><br><span id="sw">—</span></div>
+<div class="row"><span class="k">缓存桶 caches</span><br><span id="ck">—</span></div>
+<div class="row"><span class="k">下载 ever.html（完整拿一遍）</span><br><span id="dl">—</span></div>
+<div class="row"><span class="k">在 iframe 里打开 ever.html</span><br><span id="ifr">—</span></div>
+
+<iframe id="frame" src="about:blank"></iframe>
+<button onclick="location.reload()">重新检查</button>
+</div>
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  function set(id,html,cls){ var e=$(id); e.innerHTML=html; if(cls) e.className='row '+cls; }
+  function done(msg,cls){ $('verdict').innerHTML=msg; $('verdict').className='row big '+(cls||''); }
+
+  $('ua').textContent = navigator.userAgent;
+  var conn = navigator.connection || {};
+  set('env', 'isSecureContext='+window.isSecureContext
+      +' · 屏幕 '+screen.width+'×'+screen.height+' · dpr '+devicePixelRatio
+      +' · 网络 '+(conn.effectiveType||'?')+' / 下行 '+(conn.downlink||'?')+'Mbps'
+      +' · online='+navigator.onLine, '');
+
+  // ① SW / 缓存状态
+  (async function(){
+    try{
+      var rs = await navigator.serviceWorker.getRegistrations();
+      set('sw', rs.length? ('<span class="bad">还有 '+rs.length+' 个</span>：'+rs.map(r=>r.scope).join(', '))
+                         : '<span class="ok">已无（正常）</span>', '');
+      var keys = await caches.keys();
+      set('ck', keys.length? ('<span class="bad">还有缓存桶：'+keys.join(', ')+'</span>')
+                           : '<span class="ok">空（正常）</span>', '');
+    }catch(e){ set('sw','读取失败：'+e,''); }
+  })();
+
+  // ② 完整下载一次 ever.html（这是最关键的：慢网/断流会在这里露出来）
+  var t0=Date.now();
+  fetch('ever.html?dl='+Date.now(), {cache:'no-store'})
+    .then(function(r){
+      set('dl','HTTP '+r.status+' · content-length='+(r.headers.get('content-length')||'?')+' · 正在读数据…','');
+      return r.arrayBuffer().then(function(b){
+        var ms=Date.now()-t0;
+        var ok = b.byteLength > 15000000;
+        set('dl', 'HTTP '+r.status+' · 收到 '+ (b.byteLength/1048576).toFixed(2) +' MB · 用时 '+(ms/1000).toFixed(1)+'s'
+              + (ok? ' <span class="ok">（完整）</span>' : ' <span class="bad">（不完整！只有 '+b.byteLength+' 字节）</span>'), '');
+        return ok;
+      });
+    })
+    .catch(function(e){
+      set('dl','<span class="bad">失败：'+e+' · 用了 '+((Date.now()-t0)/1000).toFixed(1)+'s</span>','');
+      done('下载就失败了 —— 这是网络/运营商层面的问题，不是页面问题。<br>换 Wi-Fi 再试一次就能确认。','bad');
+    });
+
+  // ③ 在 iframe 里真的渲染一次，看它到底出不出东西
+  var f=$('frame');
+  f.onload=function(){
+    setTimeout(function(){
+      try{
+        var d=f.contentDocument;
+        if(!d){ set('ifr','<span class="bad">拿不到 contentDocument（跨域或被拦）</span>',''); return; }
+        var bodyEl=d.body;
+        var n=bodyEl?bodyEl.children.length:0;
+        var hasFrame=!!d.getElementById('jh-frame');
+        var hasSplash=!!d.getElementById('teSplash');
+        var txt=(bodyEl?String(bodyEl.textContent||'').replace(/\s+/g,' ').slice(0,60):'');
+        var good = n>0 && (hasFrame || hasSplash);
+        set('ifr', 'body 子节点 '+n+' · 桌面iframe='+(hasFrame?'有':'无')+' · 开屏='+(hasSplash?'有':'无')
+             + '<br>正文前 60 字：'+txt
+             + (good? ' <span class="ok">（渲染出来了）</span>' : ' <span class="bad">（白屏：DOM 是空的）</span>'), '');
+        if(good) done('页面能渲染。如果主站还是白屏，那是缓存里那份坏页面在作怪 —— 清站点数据即可。','ok');
+        else done('ever.html 能下载，但**渲染是空的** —— 这是页面在这个浏览器上的问题，我需要这张截图。','bad');
+      }catch(e){ set('ifr','检查出错：'+e,''); }
+    }, 9000);
+  };
+  setTimeout(function(){ f.src='ever.html?ifr='+Date.now(); }, 2500);
+})();
+</script>
+</body></html>
