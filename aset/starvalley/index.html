@@ -55,7 +55,11 @@
   #chatGrip{opacity:.45;font-size:14px;line-height:1;margin-right:1px;letter-spacing:-2px}
   #chatHead.drag, #chatHead.drag *{cursor:grabbing}
   /* 5.58：整框可拖 —— 窗外可拖，框内消息区保留纵向滚动 */
-  #chatWin{touch-action:none}
+  /* ★ 5.91：以前为了让整框能拖，把 #chatWin / #chatBody 都设成 touch-action:none ——
+     结果消息区根本收不到原生纵向滚动，上滑时只能把整个窗口拖走（用户：
+     "我想上滑聊天页面，它却给我滑到其他地方去了"）。
+     现在：窗口 auto、消息区 pan-y（竖向交还给原生滚动），标题栏仍 none（两向都能拖）。 */
+  #chatWin{touch-action:auto}
   #chatWin.dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
   #chatBody{touch-action:pan-y}
   #chatHead b{font-size:13px;color:#4a3226;letter-spacing:1px;flex:1}
@@ -65,6 +69,9 @@
   #chatHead button:active{background:#efc9d8}
   #chatBody{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:2px 2px 6px;display:flex;
     flex-direction:column;gap:6px;background:transparent}
+  /* ★ 5.91：flex 列里的子项默认 flex-shrink:1，消息一多就被压扁、文字被裁（用户看到
+     一条被"挡住"的横条）。消息一律不参与压缩，容器负责滚。 */
+  #chatBody>*{flex:0 0 auto}
   /* 消息气泡：纯 CSS 像素风，三层硬边，不用切图 → 永远不会被裁 */
   .msg{box-sizing:border-box;max-width:74%;font-size:12px;line-height:1.35;
     padding:4px 8px;border:2px solid #6b4a35;border-radius:3px;
@@ -508,6 +515,56 @@
     font:13px "Songti SC",serif;padding:7px 12px;color:#4a3226;background:#fbe9f0;
     border:2px solid #b98298;border-radius:18px;box-shadow:0 5px 14px rgba(60,30,45,.3);
     cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+
+  /* ★ 5.94：TA 状态按钮 + 面板（和「个人」一套像素纸卡风格） */
+  #taBtn{position:fixed;right:calc(10px + env(safe-area-inset-right));
+    bottom:calc(240px + env(safe-area-inset-bottom));z-index:20;
+    font:13px "Songti SC",serif;padding:7px 12px;color:#4a3226;background:#fbe9f0;
+    border:2px solid #b98298;border-radius:18px;box-shadow:0 5px 14px rgba(60,30,45,.28);
+    cursor:pointer;touch-action:manipulation}
+  #taBtn:active{transform:translateY(1px)}
+  #ta{position:fixed;inset:0;z-index:44;display:none;align-items:center;justify-content:center;
+    padding:14px;background:rgba(24,18,26,.66);touch-action:none}
+  #ta.on{display:flex}
+  #ta .ta-card{width:min(92vw,320px);box-sizing:border-box;display:flex;flex-direction:column;
+    background:url("生图/W-面板-中.png") center/100% 100% no-repeat;image-rendering:pixelated;
+    padding:26px 30px 40px;font:13px "Songti SC","SimSun",serif;color:#4a3226;
+    filter:drop-shadow(0 10px 26px rgba(40,20,32,.5))}
+  #ta .ta-head{display:flex;align-items:baseline;gap:7px;margin-bottom:10px}
+  #ta .ta-head b{font-size:16px;letter-spacing:3px}
+  #ta .ta-head s{text-decoration:none;font-size:9px;letter-spacing:2px;color:#b08a94}
+  #ta .ta-head button{margin-left:auto;font:inherit;font-size:11px;padding:4px 8px;color:#4a3226;
+    background:#fbe9f0;border:1px solid #b98298;border-radius:3px;cursor:pointer}
+  #ta .ta-face{display:flex;gap:10px;align-items:center;margin-bottom:10px;
+    border-bottom:1px dashed rgba(226,182,197,.75);padding-bottom:10px}
+  #ta .ta-face img{width:44px;height:44px;image-rendering:pixelated;background:rgba(255,255,255,.5);
+    border:2px solid #b98298;border-radius:4px}
+  #ta .ta-nm{font-size:15px;letter-spacing:1px}
+  #ta .ta-sub{font-size:11px;color:#9c8390;margin-top:3px}
+  #ta .ta-row{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px}
+  #ta .ta-row>span{width:34px;color:#9a7a86;font-size:11px}
+  #ta .ta-bar{flex:1;height:9px;box-sizing:border-box;border:2px solid #6b4a35;background:#EFE0CE}
+  #ta .ta-bar i{display:block;height:100%;width:100%;background:repeating-linear-gradient(90deg,#f2799f 0 5px,#d9608a 5px 8px)}
+  #ta .ta-bar-e i{background:repeating-linear-gradient(90deg,#7BC96F 0 5px,#5FAF55 5px 8px)}
+  #ta .ta-row b{font-size:11.5px;color:#a8556f;min-width:62px;text-align:right}
+  #ta .ta-give{display:flex;align-items:center;gap:8px;margin-top:8px}
+  #ta .ta-give button{flex:0 0 auto;font:inherit;font-size:12px;padding:6px 12px;border-radius:999px;
+    border:1px solid rgba(185,130,152,.6);background:rgba(255,246,250,.9);color:#a8556f;cursor:pointer}
+  #ta .ta-give button:active{transform:scale(.96)}
+  #ta .ta-give s{text-decoration:none;font-size:11px;color:#b08a94;margin-left:auto}
+  #ta .ta-note{margin-top:10px;font-size:11px;line-height:1.6;color:#8a6a76}
+  /* ★ 5.98：TA 背包 */
+  #ta .ta-bag-hd{margin-top:12px;font-size:12px;letter-spacing:2px;color:#7a5a63;
+    border-top:1px dashed rgba(226,182,197,.75);padding-top:9px}
+  #ta .ta-bag-hd s{text-decoration:none;font-size:9px;letter-spacing:2px;color:#b08a94;margin-left:5px}
+  #ta .ta-bag{margin-top:6px;max-height:24vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  #ta .ta-bg-grp{border:2px solid rgba(185,130,152,.5);background:rgba(255,254,251,.7);
+    padding:5px 8px 6px;margin-top:6px}
+  #ta .ta-bg-t{font-size:10px;letter-spacing:2px;color:#b08a94;margin-bottom:3px}
+  #ta .ta-bg-r{display:flex;justify-content:space-between;font-size:12.5px;line-height:1.65}
+  #ta .ta-bg-r b{color:#a8556f}
+  #ta .ta-bg-empty{text-align:center;color:#9c8390;font-size:11.5px;padding:10px 0}
+
   #mapBtn:active{transform:translateY(1px)}
 
   /* 大地图覆盖层：只做“看全局 + 点着走”，游戏画面本身仍然 1:1 不缩放 */
@@ -647,6 +704,24 @@
 <button id="meBtn"><svg class="ico" aria-hidden="true"><use href="#i-heart"/></svg> 个人</button>
 <button id="bagBtn"><svg class="ico" aria-hidden="true"><use href="#i-seed"/></svg> 背包</button>
 <button id="mapBtn"><svg class="ico" aria-hidden="true"><use href="#i-map"/></svg> 地图</button>
+<button id="taBtn"><svg class="ico" aria-hidden="true"><use href="#i-heart"/></svg> TA</button>
+<div id="ta">
+  <div class="ta-card">
+    <div class="ta-head"><b>TA</b><s>COMPANION</s>
+      <button id="taClose" aria-label="关闭"><svg class="ico" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+    <div class="ta-face"><img id="taFace" src="生图/walk_ta/down_0.png" alt=""><div class="ta-who"><div class="ta-nm" id="taName">TA</div><div class="ta-sub" id="taWhere">—</div></div></div>
+    <div class="ta-row"><span>血量</span><div class="ta-bar"><i id="taHpBar"></i></div><b id="taHpTxt">100/100</b></div>
+    <div class="ta-row"><span>体力</span><div class="ta-bar ta-bar-e"><i id="taEnBar"></i></div><b id="taEnTxt">120/120</b></div>
+    <div class="ta-row"><span>金币</span><b id="taGoldTxt">0</b></div>
+    <div class="ta-row"><span>武器</span><b id="taWeapTxt">木剑（8）</b></div>
+    <div class="ta-row"><span>防具</span><b id="taBootTxt">草鞋</b></div>
+    <div class="ta-row"><span>戒指</span><b id="taRingTxt">没戴</b></div>
+    <div class="ta-give"><button id="taGiveBtn">给 TA 100 金</button><s id="taKillTxt">击杀 0</s></div>
+    <div class="ta-bag-hd">背包 <s>BAG</s></div>
+    <div class="ta-bag" id="taBag"></div>
+    <div class="ta-note" id="taNote"></div>
+  </div>
+</div>
 
 <div id="bigmap">
   <canvas id="bmc"></canvas>
@@ -752,15 +827,15 @@
 'use strict';
 /* ============ 常量 ============ */
 const SEASON_MAPS = [
-  { label:'春', src:'生图/S1-全局图-春绿.png' },
-  { label:'夏', src:'生图/M8-全局图-分散建筑.png' },
-  { label:'秋', src:'生图/S3-全局图-秋.png' },
-  { label:'冬', src:'生图/S4-全局图-冬.png' },
+  { label:'春', src:'生图/S1-全局图-春绿.webp' },
+  { label:'夏', src:'生图/M8-全局图-分散建筑.webp' },
+  { label:'秋', src:'生图/S3-全局图-秋.webp' },
+  { label:'冬', src:'生图/S4-全局图-冬.webp' },
 ];
 let seasonIdx = 0;
 /* ===== 星露谷时间：一季 28 天；6:00 起，26:00(次日2:00) 强制结束 ===== */
 const GAME = { day:1, season:0, minutes:360, over:false,
-                gold:50, bin:{qty:0, value:0},
+                gold:500, bin:{qty:0, value:0},     /* ★ 6.03：起始金币 500 */
                 seedsBy:{strawberry:10}, seedSel:'strawberry',
                 ores:{stone:0, copper:0, silver:0, gold:0}, fish:{}, crops:{}, mineLayer:1,
                 crafted:{}, crafts:[], level:1, xp:0, stat:{harvest:0, mined:0, fished:0, earned:0},
@@ -1034,16 +1109,55 @@ window.SV = (function(){
     for(const pl of farm){
       if(pl.crop) planted++;
       if(pl.watered) watered++;
-      if(pl.crop && pl.stage >= 99) ready++;
+      if(pl.crop && pl.stage >= (((CROPS[pl.crop]||{}).grow)||4)) ready++;
     }
     return {
       day: GAME.day, season: SEASON_NAMES[GAME.season], weather,
+      /* ★ 6.04：怪、矿点、旅行商人的位置 —— 让 AI 能自己找过去 */
+      monsters: (function(){
+        const arr = [];
+        for(const sl of slimes){
+          if(!sl || sl.hp <= 0) continue;
+          arr.push({ x: Math.round(sl.x), y: Math.round(sl.y), hp: Math.round(sl.hp), maxHp: sl.maxHp,
+                     type: sl.type || 'slime',
+                     dP: Math.round(Math.hypot(sl.x - P.x, sl.y - P.y)),
+                     dTA: Math.round(Math.hypot(sl.x - TA.x, sl.y - TA.y)) });
+        }
+        return arr;
+      })(),
+      mineNodes: (function(){
+        if(!(curScene && curScene.mining)) return [];
+        const arr = [];
+        for(const n of (mineNodes || [])){
+          if(!n || n.hp <= 0) continue;
+          arr.push({ x: Math.round(n.x), y: Math.round(n.y), kind: n.kind, hp: n.hp,
+                     dTA: Math.round(Math.hypot(n.x - TA.x, n.y - TA.y)) });
+        }
+        return arr;
+      })(),
+      trader: (POI && POI.trader) ? { x: Math.round(POI.trader.x), y: Math.round(POI.trader.y),
+                name: (TRADER_SPOTS[GAME.traderSpot] && TRADER_SPOTS[GAME.traderSpot].name) || '旅行商人',
+                dTA: Math.round(Math.hypot(POI.trader.x - TA.x, POI.trader.y - TA.y)) } : null,
+      clinic: (POI && POI.clinic) ? { x: Math.round(POI.clinic.x), y: Math.round(POI.clinic.y),
+                dTA: Math.round(Math.hypot(POI.clinic.x - TA.x, POI.clinic.y - TA.y)) } : null,
       minutes: GAME.minutes, gold: GAME.gold|0, energy: Math.round(energy), maxEnergy: maxEnergy(),
       hp: GAME.hp, maxHp: GAME.maxHp, level: GAME.level|0,
       scene: scene === 'sub' ? (curScene && curScene.name) : (scene === 'farm' ? '农场' : '大世界'),
       mineLayer: GAME.mineLayer||1, mineMax: GAME.mineMax||1,
       player: { x: Math.round(P.x), y: Math.round(P.y) },
+      /* ★ 5.95：TA 的血/体力/金币也进结构化状态（App 侧 slim 会原样转给模型） */
       ta: TA ? { x: Math.round(TA.x), y: Math.round(TA.y),
+                 hp: Math.round(TA.hp), maxHp: TA.maxHp,
+                 energy: Math.round(TA.energy), maxEnergy: TA.maxEnergy,
+                 gold: TA.gold|0, away: !!TA.away, down: !!TA.down,
+                 weapon: taWeapon().name, weaponDmg: taWeapon().dmg, kills: TA.kills|0,
+                 boots: taBoot().name, armorPct: Math.round(taArmorPct()*100), ring: (taRingDef() ? taRingDef().name : '无'),
+                 bag: (function(){ const o={}; for(const k in (TA.bag||{})){
+                   const v=TA.bag[k];
+                   if(typeof v==='number'){ if(v>0) o[k]=v; }
+                   else if(v && typeof v==='object'){ const nz={}; for(const kk in v){ if((v[kk]||0)>0) nz[kk]=v[kk]; } if(Object.keys(nz).length) o[k]=nz; }
+                 } return o; })(),
+                 scene: TA.away ? taSceneLabel(TA.scene) : '跟着你',
                  dist: Math.round(Math.hypot(TA.x - P.x, TA.y - P.y)) } : null,
       farm: { idx: farmIdx, plots: farm.length, planted, watered, ready, greenhouse: !!GAME.greenhouse },
       crops: Object.assign({}, GAME.crops||{}),
@@ -1064,7 +1178,8 @@ window.SV = (function(){
       const fn = CMDS[cmd];
       if(!fn) return { ok:false, msg:'没有这个动作：' + cmd
         + '。可用：' + Object.keys(CMDS).join(' / ') };
-      const r = fn(args) || {};
+      /* ★ 5.94：AI 发出的命令都算 TA 在干活（体力/金币从 TA 身上结算） */
+      const r = asTA(function(){ return fn(args) || {}; });
       saveGame();
       const _ok = r.ok !== false;
       /* 记「这一觉之后干了多少活」：查状态 / 说话 / 睡觉本身都不算，
@@ -1080,6 +1195,7 @@ window.SV = (function(){
   const CMDS = {
     /* 看 */
     state(){
+      try{ syncGoldFromHome(); }catch(e){}   /* ★ 6.03：家园小铺花过钱，这里补上 */
       const s = state();
       const hh = Math.floor(s.minutes / 60) % 24, mm = Math.floor((s.minutes % 60) / 10) * 10;
       const f = s.farm || {};
@@ -1098,6 +1214,18 @@ window.SV = (function(){
       if(s.mineLayer > 1) m += ' · 矿洞第' + s.mineLayer + '/' + s.mineMax + '层';
       if(seeds) m += ' · 种子' + seeds;
       if(scene !== 'farm') m += ' · 不在农场（种地要先 goto{"to":"farm"}）';
+      /* ★ 5.94：TA 自己的状态也要让 AI 看得见 */
+      m += ' · TA血' + Math.round(TA.hp) + '/' + TA.maxHp
+         + ' 体力' + Math.round(TA.energy) + '/' + TA.maxEnergy
+         + ' 金' + (TA.gold|0)
+         + (TA.away ? '（TA 在' + taSceneLabel(TA.scene) + '，喊 come 才过来）' : '（TA 就在你旁边）');
+      if(TA.down) m += ' · TA 累倒了，睡一觉就好';
+      if(TA.job) m += ' · 正在' + (TA.job.label||'干活') + ' ' + (TA.job.i) + '/' + TA.job.items.length + '（走过去一格格干）';
+      /* ★ 5.98：背包摘要让 AI 知道自己有什么 */
+      try{
+        const _bs = taBagSummary(8);
+        m += ' · TA背包：' + (_bs || '空的（可以 buy 买种子/肥料，或 harvest 收作物）');
+      }catch(e){}
       return { msg: m };
     },
     /* 走 —— 认场景。
@@ -1151,6 +1279,19 @@ window.SV = (function(){
         openSmithShop();
         return { msg:'打开了铁匠铺' };
       }
+      /* ★ 6.07：goto{"to":"world"} = 回大世界（AI 常这么写） */
+      if(t === 'world'){
+        if(scene === 'world') return { msg:'已经在大世界了' };
+        if(scene === 'sub') exitSubScene(); else if(scene === 'farm') exitFarm();
+        return { msg:'回到镇上' };
+      }
+      /* ── D2. 旅行商人 / 诊所：用 POI 坐标走过去 ── */
+      if(t === 'trader' || t === 'clinic'){
+        if(!POI[t]) return { ok:false, msg:'今天没有' + (t==='trader'?'旅行商人':'诊所') };
+        if(scene === 'sub' || scene === 'farm') toWorld();
+        if(!walkTo(POI[t].x, POI[t].y)) return { ok:false, msg:'走不过去' };
+        return { msg:'走向' + (t==='trader' ? '旅行商人' : '诊所') + '（' + Math.round(POI[t].x) + ',' + Math.round(POI[t].y) + '）' };
+      }
       /* ── E. 直接坐标（当前场景内寻路） ── */
       if(a.x != null && a.y != null){
         if(!walkTo(+a.x, +a.y)) return { ok:false, msg:'走不过去' };
@@ -1163,31 +1304,30 @@ window.SV = (function(){
     /* 种田 */
     water(){
       if(scene !== 'farm') return { ok:false, msg:'不在农场——先 goto{"to":"farm"} 进农场' };
-      let n = 0;
-      for(const pl of (farms[farmIdx]||[])){
-        if(!pl.tilled || !pl.crop || pl.watered) continue;
-        if(energy < 1) break;
-        energy -= carency('farm', 2); pl.watered = true; n++;
-        if(n >= 40) break;
-      }
-      return n ? { msg:'浇了 ' + n + ' 格' } : { ok:false, msg:'没有需要浇的地' };
+      if(TA.job) return { ok:false, msg:'我还在' + (TA.job.label||'干活') + '（还剩 ' + (TA.job.items.length - TA.job.i) + ' 格），干完再叫我' };
+      const list = (farms[farmIdx]||[]).filter(pl => pl.tilled && pl.crop && !pl.watered);
+      if(!list.length) return { ok:false, msg:'没有需要浇的地' };
+      bringTAHere();
+      taJobStart('water', list, '浇水');
+      return { msg:'去浇水：' + list.length + ' 格，我一格格走过去浇' };
     },
     harvest(){
       if(scene !== 'farm') return { ok:false, msg:'不在农场——先 goto{"to":"farm"} 进农场' };
-      let n = 0;
-      for(const pl of (farms[farmIdx]||[])){
-        if(pl.crop && pl.stage >= 99){ tool = 'hand'; usePlot(pl); n++; }
-      }
-      return n ? { msg:'收了 ' + n + ' 株' } : { ok:false, msg:'没有成熟的作物' };
+      if(TA.job) return { ok:false, msg:'我还在' + (TA.job.label||'干活') + '（还剩 ' + (TA.job.items.length - TA.job.i) + ' 格），干完再叫我' };
+      const list = (farms[farmIdx]||[]).filter(pl => pl.crop && pl.stage >= (((CROPS[pl.crop]||{}).grow)||4));
+      if(!list.length) return { ok:false, msg:'没有成熟的作物' };
+      bringTAHere();
+      taJobStart('harvest', list, '收菜');
+      return { msg:'去收：' + list.length + ' 株，一株株走过去收' };
     },
     /* 采集：砍硬木 */
     chop(){
       const used = GAME.hardToday || 0;
       const cost = used >= 8 ? 12 : 6;
-      if(energy < cost) return { ok:false, msg:'体力不够（要 ' + cost + '）' };
-      energy -= carency('forag', cost);
+      if(!actorSpend(carency('forag', cost))) return { ok:false, msg:'体力不够（要 ' + cost + '）' };
       GAME.hardToday = used + 1;
-      GAME.crafted.hardwood = (GAME.crafted.hardwood||0) + 1;
+      if(actorIsTA()) taBagAdd('crafted','hardwood',1);
+      else GAME.crafted.hardwood = (GAME.crafted.hardwood||0) + 1;
       addSkillXp('forag', 12);
       sfx.chop(); showFx('咔嚓！硬木 +1', 'good', 1100);
       return { msg:'砍到 1 块硬木（今天第 ' + GAME.hardToday + ' 次，耗 ' + cost + ' 体力）' };
@@ -1195,33 +1335,47 @@ window.SV = (function(){
     /* 种田（续） */
     till(){
       if(scene !== 'farm') return { ok:false, msg:'不在农场——先 goto{"to":"farm"} 进农场' };
+      if(TA.job) return { ok:false, msg:'我还在' + (TA.job.label||'干活') + '（还剩 ' + (TA.job.items.length - TA.job.i) + ' 格），干完再叫我' };
       const pl=(farms[farmIdx]||[]).find(x=>!x.tilled && !x.crop);
       if(!pl) return { ok:false, msg:'没有空地了' };
-      if(energy < 3) return { ok:false, msg:'体力不够' };
-      tool='hoe'; usePlot(pl);
-      return { msg:'锄了一格（第 ' + (pl.r+1) + ' 排 ' + (pl.c+1) + ' 列）' };
+      if(actorEnergy() < 3) return { ok:false, msg:'体力不够' };
+      bringTAHere();
+      taJobStart('till', [pl], '锄地');
+      return { msg:'去锄第 ' + (pl.r+1) + ' 排 ' + (pl.c+1) + ' 列（走过去再锄）' };
     },
     plant(a){
       if(scene !== 'farm') return { ok:false, msg:'不在农场——先 goto{"to":"farm"} 进农场' };
-      const seed = a.seed || GAME.seedSel || firstOwnedSeed();
-      if(!seed) return { ok:false, msg:'没有种子' };
-      if(((GAME.seedsBy||{})[seed]||0) <= 0) return { ok:false, msg:'种子用完了：' + ((CROPS[seed]&&CROPS[seed].name)||seed) };
+      /* ★ 5.98：AI 种地用它自己背包里的种子（没有就先 buy） */
+      const taFirstSeed = function(){
+        const b = taBagOf('seeds');
+        for(const k of Object.keys(CROPS)) if((b[k]||0) > 0) return k;
+        return '';
+      };
+      const seed = a.seed || (actorIsTA() ? (taBagOf('seeds')[GAME.seedSel]>0 ? GAME.seedSel : taFirstSeed()) : (GAME.seedSel || firstOwnedSeed()));
+      if(!seed) return { ok:false, msg:'你（TA）还没有种子 —— 先 buy{"item":"草莓种子","n":5}' };
+      if(actorIsTA() ? taBagCount('seeds', seed) <= 0 : (((GAME.seedsBy||{})[seed]||0) <= 0))
+        return { ok:false, msg:'种子用完了：' + ((CROPS[seed]&&CROPS[seed].name)||seed) + '（先 buy 买）' };
       const pl=(farms[farmIdx]||[]).find(x=>x.tilled && !x.crop);
       if(!pl) return { ok:false, msg:'没有已锄好的空地' };
-      GAME.seedSel = seed; tool='seed'; usePlot(pl);
-      return { msg:'种下 ' + ((CROPS[seed]&&CROPS[seed].name)||seed) };
+      if(TA.job) return { ok:false, msg:'我还在' + (TA.job.label||'干活') + '（还剩 ' + (TA.job.items.length - TA.job.i) + ' 格），干完再叫我' };
+      bringTAHere();
+      taJobStart('plant', [pl], '种' + (((CROPS[seed]&&CROPS[seed].name)||seed)), { seed: seed });
+      return { msg:'去种 ' + ((CROPS[seed]&&CROPS[seed].name)||seed) + '（第 ' + (pl.r+1) + ' 排 ' + (pl.c+1) + ' 列）' };
     },
     fert(){
       if(scene !== 'farm') return { ok:false, msg:'不在农场——先 goto{"to":"farm"} 进农场' };
+      if(TA.job) return { ok:false, msg:'我还在' + (TA.job.label||'干活') + '（还剩 ' + (TA.job.items.length - TA.job.i) + ' 格），干完再叫我' };
       const pl=(farms[farmIdx]||[]).find(x=>x.tilled && x.crop && !x.fert);
       if(!pl) return { ok:false, msg:'没有可施肥的地' };
-      tool='fert'; usePlot(pl);
-      return { msg:'施了一次肥' };
+      bringTAHere();
+      taJobStart('fert', [pl], '施肥');
+      return { msg:'去施肥（第 ' + (pl.r+1) + ' 排 ' + (pl.c+1) + ' 列）' };
     },
     /* 钓鱼 */
     fish(){
-      if(energy < 5) return { ok:false, msg:'体力不够' };
+      if(actorEnergy() < 5) return { ok:false, msg:'体力不够' };
       if(scene !== 'sub' || !curScene || curScene.id !== 'beach') enterSubScene('beach');
+      try{ actorSpend(5); }catch(e){}      /* ★ 6.07：扣自己的体力 */
       openFishing();
       return { msg:'已下竿，绿条交给 AI 控' };
     },
@@ -1232,17 +1386,23 @@ window.SV = (function(){
       return { msg:'进到矿洞第 ' + lv + ' 层' };
     },
     mine_tap(){
-      if(scene !== 'sub' || !curScene || !curScene.mining) return { ok:false, msg:'不在矿洞' };
-      if(energy < 4) return { ok:false, msg:'体力不够' };
-      mineTap();
-      return { msg:'敲了一下' };
+      if(scene !== 'sub' || !curScene || !curScene.mining) return { ok:false, msg:'不在矿洞——先 goto{"to":"mine"} 进矿洞' };
+      if(TA.job) return taBusyMsg();
+      const nd = nearestMineNodeToTA(4000); /* ★ 6.04：多远都去敲 */
+      if(!nd) return { ok:false, msg:'附近没有矿点（state.mine.nodes 有每个矿点的位置）' };
+      if((TA.energy|0) < 4) return { ok:false, msg:'体力不够（我有 ' + (TA.energy|0) + '），先 eat 或 sleep' };
+      bringTAHere();
+      taJobStart('mine', [nd], '敲矿');
+      return { msg:'去敲矿（' + (ORES[nd.kind]&&ORES[nd.kind].name || nd.kind) + '，还剩 ' + nd.hp + ' 下）' };
     },
     attack(){
-      if(scene !== 'sub' || !curScene || !curScene.mining) return { ok:false, msg:'不在矿洞' };
-      const sl = nearestSlime();
-      if(!sl) return { ok:false, msg:'附近没有怪' };
-      playerAttack();
-      return { msg:'挥了一剑' };
+      if(scene !== 'sub' || !curScene || !curScene.mining) return { ok:false, msg:'不在矿洞——先 goto{"to":"mine"} 进矿洞' };
+      if(TA.job) taJobCancel();            /* ★ 6.07：打架优先，先放下手里的活 */
+      const sl = nearestSlimeToTA(4000);   /* ★ 6.04：多远都去打（它会自己走过去） */
+      if(!sl) return { ok:false, msg:'附近没有怪（state 里的 monsters 有每只怪的位置，先 goto 过去）' };
+      bringTAHere();
+      taJobStart('fight', [sl], '打怪', { tgt: sl });
+      return { msg:'去打最近的怪（它有 ' + Math.round(sl.hp) + ' 血，我用' + taWeapon().name + '）' };
     },
     elevator(a){
       const lv = Math.max(1, Math.min(GAME.mineMax||1, (a&&a.layer)||1));
@@ -1262,10 +1422,52 @@ window.SV = (function(){
     shop_buy(){ openShop(); return { msg:'打开了杂货店', ui:'shop' }; },
     shop_sell(){ openShop(); return { msg:'打开了杂货店（卖货页）', ui:'shop' }; },
     trader(){ openTrader(); return { msg:'打开了旅行商人', ui:'shop' }; },
+    /* ★ 6.04：把金币送给 TA（玩家 → TA） */
+    give(a){
+      const n = Math.max(0, parseInt(a.gold != null ? a.gold : (a.n != null ? a.n : a.amount), 10) || 0);
+      if(!n) return { ok:false, msg:'给多少？give{"gold":100}' };
+      return giveToTA(n);
+    },
+    /* ★ 6.04：TA 自己去诊所治疗（挂自己的号、花自己的钱） */
+    heal(){
+      if(TA.job) return taBusyMsg();
+      const fee = Math.max(60, Math.round((TA.gold|0) * 0.12));
+      if((TA.gold|0) < fee) return { ok:false, msg:'我只有 ' + (TA.gold|0) + ' 金，看病要 ' + fee + '（可以让用户给你点钱）' };
+      if(scene !== 'world'){
+        /* ★ 6.07：你不在镇上 → 直接结算，别让它卡在跨场景走路 */
+        TA.gold = (TA.gold|0) - fee;
+        TA.hp = TA.maxHp|0; TA.energy = TA.maxEnergy|0; TA.down = false;
+        try{ saveGame(); renderTA(); }catch(e){}
+        return { msg:'你不在镇上，它跑去诊所治好了（花 ' + fee + ' 金，血和体力回满）' };
+      }
+      bringTAHere();
+      taJobStart('heal', [POI.clinic], '去看医生');
+      return { msg:'去诊所挂号（大概 ' + fee + ' 金），治好回满血和体力' };
+    },
+    /* ★ 6.04：旅行商人在哪 / 附近有什么（AI 找路用） */
+    where(){
+      /* ★ 6.11：说清「我在哪个场景」（away 时是 TA 自己的场景，不是玩家的）；
+         商人距离只在同一个镇上时才有意义，否则直说在镇上。 */
+      const here = TA.away ? taSceneLabel(TA.scene)
+        : (scene === 'sub' ? ((curScene && curScene.name) || '屋里')
+        : (scene === 'farm' ? '农场' : (POI_ACT[nearPoi] ? POI_ACT[nearPoi].label : '镇上')));
+      const tr = POI.trader;
+      let extra;
+      if(!tr) extra = '；今天旅行商人不在';
+      else if(scene === 'world' && !TA.away){
+        extra = '；旅行商人在(' + Math.round(tr.x) + ',' + Math.round(tr.y) + ') 离我 '
+              + Math.round(Math.hypot(tr.x - TA.x, tr.y - TA.y)) + ' 格';
+      } else {
+        extra = '；旅行商人在镇上（你不在镇上，要买得先回镇上）';
+      }
+      const come = TA.away ? '；我不在你所在的场景，要我来就喊「过来」' : '';
+      return { msg:'我在' + here + '，位置(' + Math.round(TA.x) + ',' + Math.round(TA.y) + ')' + extra + come };
+    },
     /* 生活 */
     eat(){
-      if(typeof eatBestFood === 'function'){ const r = eatBestFood(); return { msg: r || '吃了一样东西' }; }
-      return { ok:false, msg:'现在没有能吃的东西' };
+      const r = (typeof eatBestFood === 'function') ? eatBestFood() : '';
+      if(!r) return { ok:false, msg:'现在没有能吃的东西 —— 去厨房做一份（craft 打开加工台 / 灶台做饭）' };
+      return { msg: r };
     },
     sleep(){
       if(!(scene === 'sub' && curScene && curScene.id === 'home')){
@@ -1276,8 +1478,10 @@ window.SV = (function(){
         return { ok:false, msg:'刚睡醒没多久，先干点活再睡（这轮只做了 ' + acts + ' 个动作，至少 3 个）' };
       }
       GAME.actsSinceSleep = 0;
+      /* ★ 5.94：TA 跟着睡，血和体力一起回满 */
+      TA.hp = TA.maxHp; TA.energy = TA.maxEnergy; TA.down = false; TA.hurtT = 0;
       endDay(); closeMarket && closeMarket();
-      return { msg:'睡了一觉，进入第 ' + GAME.day + ' 天（' + weather + '）' };
+      return { msg:'睡了一觉，进入第 ' + GAME.day + ' 天（' + weather + '）。TA 也回满了（血 ' + TA.hp + ' / 体力 ' + TA.energy + '）' };
     },
     say(a){
       if(TA && a.text){ TA.bubble = { text: String(a.text).slice(0,60), t: 4.5 }; }
@@ -1287,9 +1491,21 @@ window.SV = (function(){
        只能嘴上说，玩家永远等不到人 —— 这就是"它说要去我这边但没过来"。 */
     come(a){
       if(!TA) return { ok:false, msg:'TA 不在场' };
+      /* ★ 5.93：TA 可能在别的场景（进来时不再自动跟随）—— 喊它过来时先叫进本场景，
+         否则算出来的距离是另一个场景的坐标，看起来"喊了也不来"。 */
+      const wasAway = !!TA.away;
+      /* ★ 6.10：先把「原来在哪」记下来 —— bringTAHere() 会把 TA.scene 改成本场景，
+         之后再读它拼句子，永远会说「从农场赶过来的」（D2 的老 bug）。 */
+      const fromLabel = taSceneLabel(TA.scene);
+      bringTAHere();
       const dist = Math.round(Math.hypot(TA.x - P.x, TA.y - P.y));
-      /* 已经贴着了就别再挤 */
+      if(wasAway && dist < 60){
+        return { msg:'我过来了（从' + fromLabel + '赶过来的）' };
+      }
+      /* 已经贴着了就别再挤。★ 6.10：但也得把手上的活停下 ——
+         以前这条早退不清 job，站在旁边说「过来」它继续浇水（I7）。 */
       if(dist < 46){
+        try{ taJobCancel(); }catch(e){}
         TA.path = null; TA.mode = 'command'; TA.wait = 1.2;
         return { msg:'已经在你身边了（' + dist + ' 像素）' };
       }
@@ -1297,14 +1513,17 @@ window.SV = (function(){
       const ang = Math.random() * Math.PI * 2;
       const tx = P.x + Math.cos(ang) * r;
       const ty = P.y + Math.abs(Math.sin(ang)) * r * 0.7 + 14;
+      const fromNote = wasAway ? ('我过来了（从' + fromLabel + '赶过来的）') : '';
       let walked = false;
       try{ walked = TA_API.goTo(tx, ty); }catch(e){}
       if(!walked){
         /* 走不过去（隔着墙/水/柜台）→ 直接站到玩家旁边，别让它卡在墙那头 */
         placeTANearPlayer();
-        return { msg:'走到你身边了（中间过不去，我绕到旁边了）' };
+        return { msg: fromNote ? (fromNote + '。中间过不去，我绕到你旁边了')
+                               : '走到你身边了（中间过不去，我绕到旁边了）' };
       }
-      return { msg:'正朝你走过来（还有 ' + dist + ' 像素）' };
+      return { msg: fromNote ? (fromNote + '，正朝你走过来（还有 ' + dist + ' 像素）')
+                             : '正朝你走过来（还有 ' + dist + ' 像素）' };
     },
     /* 别再自己乱走了 */
     stop(){
@@ -1314,6 +1533,7 @@ window.SV = (function(){
     },
     /* 交易：直接买卖，不用点面板（AI 用这两个） */
     buy(a){
+      if(actorIsTA()) return taBuyCommand(a);     /* ★ 6.04：AI 自己去对应的店买 */
       const want = String(a.item || a.seed || a.name || '').trim();
       const n = Math.max(1, Math.min(99, parseInt(a.n, 10) || 1));
       if(!want) return { ok:false, msg:'买什么？给 {item:"草莓种子", n:1}' };
@@ -1324,11 +1544,22 @@ window.SV = (function(){
       }
       if(key){
         const c = CROPS[key];
-        if(c.rare) return { ok:false, msg:c.name + '是稀有种子，只在沙漠商人那儿卖（先 goto{"to":"desert"}）' };
+        if(c.rare){
+          /* ★ 6.04：稀有种子在沙漠商人那儿 —— TA 去了就能买（花它自己的钱，进它背包） */
+          bringTAHere();
+          if(!taAtPoi('desert', 260)) return { ok:false, msg:c.name + '是稀有种子，只在沙漠商人那儿卖（先 goto{"to":"desert"}）' };
+          const rcost = c.buy * n;
+          if(!walletPay(rcost)) return { ok:false, msg:'钱不够：要 ' + rcost + ' 金，' + (actorIsTA()?'TA 身上':'现在') + '只有 ' + walletGet() + ' 金' };
+          if(actorIsTA()) taBagAdd('seeds', key, n);
+          else { GAME.seedsBy = GAME.seedsBy || {}; GAME.seedsBy[key] = (GAME.seedsBy[key]||0) + n; }
+          saveGame();
+          return { msg:'在沙漠商人那儿买了 ' + n + ' 颗' + c.name + '种子，花 ' + rcost + ' 金' };
+        }
         const cost = c.buy * n;
-        if(!payFor(cost)) return { ok:false, msg:'钱不够：要 ' + cost + ' 金，现在 ' + (GAME.gold|0) + ' 金' };
+        if(!walletPay(cost)) return { ok:false, msg:'钱不够：要 ' + cost + ' 金，' + (actorIsTA()?'TA 身上':'现在') + '只有 ' + walletGet() + ' 金' };
         GAME.seedsBy = GAME.seedsBy || {};
-        GAME.seedsBy[key] = (GAME.seedsBy[key] || 0) + n;
+        if(actorIsTA()) taBagAdd('seeds', key, n);      /* ★ 5.98：AI 买的种子进它背包 */
+        else GAME.seedsBy[key] = (GAME.seedsBy[key] || 0) + n;
         try{ refreshSeedChip(); }catch(e){} saveGame();
         return { msg:'买了 ' + n + ' 颗' + c.name + '种子，花 ' + cost + ' 金（剩 ' + (GAME.gold|0) + ' 金）' };
       }
@@ -1336,21 +1567,41 @@ window.SV = (function(){
         const premium = /高级/.test(want);
         const unit = premium ? 120 : 40;
         const cost = unit * n;
-        if(!payFor(cost)) return { ok:false, msg:'钱不够：要 ' + cost + ' 金，现在 ' + (GAME.gold|0) + ' 金' };
+        if(!walletPay(cost)) return { ok:false, msg:'钱不够：要 ' + cost + ' 金，' + (actorIsTA()?'TA 身上':'现在') + '只有 ' + walletGet() + ' 金' };
         GAME.fert = GAME.fert || {};
         const kk = premium ? 'premium' : 'basic';
-        GAME.fert[kk] = (GAME.fert[kk] || 0) + n;
+        if(actorIsTA()){ taBagOf('fert')[kk] = (taBagOf('fert')[kk]||0) + n; }
+        else GAME.fert[kk] = (GAME.fert[kk] || 0) + n;
         saveGame();
         return { msg:'买了 ' + n + ' 份' + (premium ? '高级' : '基础') + '肥料，花 ' + cost + ' 金' };
       }
       if(/药水/.test(want)){
         const cost = 90 * n;
-        if(!payFor(cost)) return { ok:false, msg:'钱不够：要 ' + cost + ' 金，现在 ' + (GAME.gold|0) + ' 金' };
-        energy = Math.min(maxEnergy(), energy + 80 * n);
+        if(!walletPay(cost)) return { ok:false, msg:'钱不够：要 ' + cost + ' 金，' + (actorIsTA()?'TA 身上':'现在') + '只有 ' + walletGet() + ' 金' };
+        if(actorIsTA()){ TA.energy = Math.min(TA.maxEnergy|0, (TA.energy|0) + 80 * n); }
+        else { energy = Math.min(maxEnergy(), energy + 80 * n); }
         saveGame();
         return { msg:'买了 ' + n + ' 瓶体力药水并喝下（体力 ' + Math.round(energy) + '/' + maxEnergy() + '）' };
       }
-      return { ok:false, msg:'店里没有「' + want + '」。能买：种子（如"草莓种子"）/基础肥料/高级肥料/体力药水；稀有种子要先去沙漠' };
+      /* ★ 6.04：铁匠铺的武器 —— 买给自己（TA 的武器跟玩家分开） */
+      const WP = { '木剑':0, '铜剑':1, '银剑':2 };
+      if(Object.prototype.hasOwnProperty.call(WP, want)){
+        if(!actorIsTA()){
+          /* 玩家买武器仍走原来的铁匠铺界面 */
+          return { ok:false, msg:'玩家买武器请点铁匠铺界面；这条是给 TA 自己用的' };
+        }
+        bringTAHere();
+        if(!taAtPoi('smith', 200)) return { ok:false, msg:'不在铁匠铺——先 goto{"to":"smith"} 到铁匠铺门口' };
+        const lv = WP[want];
+        if(lv <= (TA.weaponLv|0)) return { ok:false, msg:'我已经有更好的了（' + taWeapon().name + '）' };
+        const price = WEAPONS[lv] ? WEAPONS[lv].price : 0;
+        if(!walletPay(price)) return { ok:false, msg:'钱不够：' + want + ' 要 ' + price + ' 金，我有 ' + walletGet() };
+        TA.weaponLv = lv;
+        try{ sfx.buy(); showFx('换上' + want, 'good', 1200); }catch(e){}
+        saveGame();
+        return { msg:'买了' + want + '（攻击 ' + taWeapon().dmg + '，花 ' + price + ' 金）' };
+      }
+      return { ok:false, msg:'店里没有「' + want + '」。能买：种子（如"草莓种子"）/基础肥料/高级肥料/体力药水/（铁匠铺）铜剑·银剑；稀有种子要先去沙漠' };
     },
     sell(a){
       const want = String(a.item || a.crop || a.name || '').trim();
@@ -1361,7 +1612,7 @@ window.SV = (function(){
         if(k === want || c.name === want){ key = k; break; }
       }
       if(!key) return { ok:false, msg:'手里没有「' + want + '」这种作物' };
-      const have = GAME.crops[key] || 0;
+      const have = actorIsTA() ? taBagCount('crops', key) : (GAME.crops[key] || 0);
       if(have <= 0) return { ok:false, msg:'没有' + CROPS[key].name + '可卖' };
       let n = parseInt(a.n, 10);
       if(!n || n <= 0) n = have;
@@ -1369,16 +1620,19 @@ window.SV = (function(){
       let mul = 0.95;
       try{ mul = 0.95 * mktMul('crops') * festivalMul() * centerPriceMul() * PM.cropPrice(); }catch(e){}
       const t = cropSellTotal(key, n, mul);
-      cropConsume(key, n);
-      GAME.gold = (GAME.gold || 0) + t.gold;
+      if(actorIsTA()) taBagTake('crops', key, n); else cropConsume(key, n);   /* ★ 5.98 */
+      walletAdd(t.gold);        /* ★ 5.94：AI 卖的货，钱进它自己的钱包 */
       GAME.stat = GAME.stat || {};
-      GAME.stat.earned = (GAME.stat.earned || 0) + t.gold;
+      /* ★ 6.10：TA 卖货的钱不进玩家的「累计卖出」统计（成就口径） */
+      if(!actorIsTA()) GAME.stat.earned = (GAME.stat.earned || 0) + t.gold;
       try{ sfx.coin(); }catch(e){}
       saveGame();
-      return { msg:'卖了 ' + n + ' 个' + CROPS[key].name + '，+' + t.gold + ' 金（现有 ' + (GAME.gold|0) + ' 金）' };
+      return { msg:'卖了 ' + n + ' 个' + CROPS[key].name + '，+' + t.gold + ' 金（现有 ' + walletGet() + ' 金）' };
     },
     /* 交易 */
     ship(){
+      /* ★ 5.99：出货箱是玩家农场里的，AI 别把玩家的货当自己的卖了 */
+      if(actorIsTA()) return { ok:false, msg:'出货箱是玩家的；你要卖自己的东西就用 sell{"item":"草莓","n":3}' };
       if(!canShip()) return { ok:false, msg:'没有能出货的东西' };
       sellOres();
       const b = GAME.bin || {};
@@ -1421,6 +1675,12 @@ function rollQuality(){
 /* 出售 n 个时的总价：先卖金星、再银星、最后普通（含各倍率） */
 function cropSellTotal(k, n, mulBase){
   const base = (CROPS[k] ? CROPS[k].sell : 0) * (mulBase || 1);
+  /* ★ 5.98：AI 卖的是它自己背包里的作物 —— 不能按玩家库存算（否则算出 0 金） */
+  if(typeof actorIsTA==='function' && actorIsTA()){
+    const have = taBagCount('crops', k);
+    const nn = Math.min(Math.max(0, n|0), have);
+    return { gold: Math.round(nn * base), gUsed:0, sUsed:0, nUsed:nn };
+  }
   const q = cqOf(k);
   const total = cropTotal(k);
   const normal = Math.max(0, total - q.s - q.g);
@@ -1632,7 +1892,12 @@ function updateCombat(dt){
   for(const sl of slimes){
     if(sl.hurt > 0) sl.hurt -= dt;
     sl.wob += dt * 3;
-    const dx = P.x - sl.x, dy = P.y - sl.y;
+    /* ★ 5.94：怪打离它最近的人 —— 玩家或 TA（TA 不在本场景 / 已倒下就不算） */
+    let tgt = { o: P, isTA: false };
+    if(!TA.away && !TA.down){
+      if(Math.hypot(TA.x - sl.x, TA.y - sl.y) < Math.hypot(P.x - sl.x, P.y - sl.y)) tgt = { o: TA, isTA: true };
+    }
+    const dx = tgt.o.x - sl.x, dy = tgt.o.y - sl.y;
     const d = Math.hypot(dx, dy) || 1;
     if(d > 36){
       const sp = (sl.type === 'bat' ? 72 : sl.type === 'big' ? 24 :
@@ -1643,10 +1908,22 @@ function updateCombat(dt){
       sl.cd -= dt;
       if(sl.cd <= 0){
         sl.cd = 1.5;
-        const dmg = Math.max(1, Math.round(sl.dmg * (1 - bootArmor()) * (GAME.ring === 'def' ? 0.85 : 1)));
-        GAME.hp = Math.max(0, (GAME.hp == null ? 100 : GAME.hp) - dmg);
-        hurtT = 0.35; sfx.fail();
-        if(GAME.hp <= 0){ playerDown(); return; }
+        if(tgt.isTA){
+          /* ★ 5.94：打到 TA 身上 —— 扣它自己的血 */
+          const td = Math.max(1, Math.round(sl.dmg * 0.9 * (1 - taArmorPct()) * taDefMul()));   /* ★ 6.06：它的鞋和戒指 */
+          TA.hp = Math.max(0, TA.hp - td);
+          TA.hurtT = 0.4;
+          sfx.fail();
+          if(TA.hp <= 0){
+            TA.hp = 0; TA.down = true; TA.path = null; TA.mode = 'idle'; TA.wait = 999;
+            toast('TA 被打倒了…睡一觉（或睡到明天）就恢复', 2600);
+          }
+        } else {
+          const dmg = Math.max(1, Math.round(sl.dmg * (1 - bootArmor()) * (GAME.ring === 'def' ? 0.85 : 1)));
+          GAME.hp = Math.max(0, (GAME.hp == null ? 100 : GAME.hp) - dmg);
+          hurtT = 0.35; sfx.fail();
+          if(GAME.hp <= 0){ playerDown(); return; }
+        }
       }
     }
   }
@@ -1708,9 +1985,11 @@ function playerAttack(){
     if(deadIdx >= 0 && GAME.slimeHp){ GAME.slimeHp.splice(deadIdx, 1); GAME.slimePos.splice(deadIdx, 1); }
     bump('kills');
     addSkillXp('combat', 10);
-    try{ SV.emit('kill', { kind: sl.type, coin }); }catch(e){}
+    /* ★ 6.11：coin 要在 emit 之前算好 —— 原来这里先用后声明，每次击杀都抛
+       ReferenceError 被 catch 吞掉，kill 事件从来没发出去过。 */
     const coin = (sl.type === 'big' ? 26 : sl.type === 'skeleton' ? 22 : sl.type === 'crab' ? 16 :
                   sl.type === 'bat' ? 12 : 8) + Math.floor(Math.random() * 14);
+    try{ SV.emit('kill', { kind: sl.type, coin }); }catch(e){}
     GAME.gold = (GAME.gold || 0) + coin;
     GAME.stat.earned = (GAME.stat.earned || 0) + coin;
     addXp(8); sfx.coin();
@@ -1823,7 +2102,7 @@ let scene = 'world';
 
 /* 农场场景 */
 const FARM = {
-  src:'生图/F1-农场场景.png',
+  src:'生图/F1-农场场景.webp',
   w:1536, h:1024, cell:32, gw:48, gh:32,
   spawn:{x:470, y:340},
   plot:{x:190, y:385, cols:14, rows:7, cw:45, ch:47, topH:40, topGap:6},
@@ -1835,7 +2114,7 @@ const FARM = {
 const BIN = { x:640, y:330, w:38, h:30 };
 const BENCH = { x:800, y:318, w:46, h:28 };   /* 加工台 */
 let farmImg = null;
-const FARM_SRCS = ['生图/F1-农场场景.png','生图/F2-农场-夏.png','生图/F3-农场-秋.png','生图/F4-农场-冬.png'];
+const FARM_SRCS = ['生图/F1-农场场景.webp','生图/F2-农场-夏.webp','生图/F3-农场-秋.webp','生图/F4-农场-冬.webp'];
 const farmImgs = [];
 let farmImgCur = null;
 const ROW_Y = [];
@@ -2009,6 +2288,145 @@ function totalOres(){ let n=0; for(const k in (GAME.ores||{})) n += GAME.ores[k]
 let energy = 150;
 const MAX_ENERGY = 150;
 function maxEnergy(){ return 150 + ((GAME.level||1) - 1) * 15 + (((GAME.houseLv||1) - 1) * 20); }
+
+/* ★ 5.94：AI（TA）也有自己的体力和金币。
+   AI 下命令时用 asTA() 把结算对象切成 TA —— usePlot / mineTap 这些共用逻辑
+   扣的就是 TA 自己的体力，而不是玩家的。 */
+let _costActor = 'P';
+function asTA(fn){ const o=_costActor; _costActor='TA'; try{ return fn(); } finally { _costActor=o; } }
+function actorIsTA(){ return _costActor==='TA'; }
+function actorEnergy(){ return actorIsTA() ? (TA.energy|0) : energy; }
+function actorEnergyMax(){ return actorIsTA() ? (TA.maxEnergy|0) : maxEnergy(); }
+function actorSpend(n){
+  n = Math.max(0, Math.round(n));
+  if(actorIsTA()){
+    if((TA.energy|0) < n) return false;
+    TA.energy = (TA.energy|0) - n;
+    return true;
+  }
+  if(energy < n) return false;
+  energy -= n;
+  return true;
+}
+/* 钱包：AI 花/赚的是 TA 的金币 */
+function walletGet(){ return actorIsTA() ? (TA.gold|0) : (GAME.gold|0); }
+function walletPay(cost){
+  cost = Math.max(0, Math.round(cost));
+  if(actorIsTA()){
+    if((TA.gold|0) < cost) return false;
+    TA.gold = (TA.gold|0) - cost;
+    return true;
+  }
+  return payFor(cost);
+}
+/* ★ 6.03：玩家金币镜像到 localStorage['te_gold']，家园小铺（aset/home4/editor.html）
+   读这个键来显示"钱"，买东西也从这个键扣 —— 两边是同一个钱包。 */
+function mirrorGold(){
+  try{
+    localStorage.setItem('te_gold', String(GAME.gold|0));
+    /* ★ 6.09：带时间戳，家园小铺据此判断「谁更新」，不再每 15 秒用旧值抹掉这边的钱 */
+    localStorage.setItem('te_gold_at', String(Date.now()));
+  }catch(e){}
+}
+function syncGoldFromHome(){
+  try{
+    var raw = localStorage.getItem('te_gold');
+    if(raw == null) return;
+    var g = Number(raw);
+    if(!isFinite(g) || g < 0) return;
+    if(Math.round(g) !== (GAME.gold|0)) GAME.gold = Math.round(g);
+  }catch(e){}
+}
+
+function walletAdd(n){
+  n = Math.max(0, Math.round(n));
+  if(actorIsTA()){ TA.gold = (TA.gold|0) + n; return; }
+  GAME.gold = (GAME.gold||0) + n;
+}
+/* ★ 5.98：TA 的背包读写。分类和玩家一致：种子/作物/矿石/鱼/蛋奶/料理/加工品/肥料/鱼饵 */
+function taBagOf(kind){
+  if(!TA.bag) TA.bag = {};
+  if(!TA.bag[kind] || typeof TA.bag[kind] !== 'object') TA.bag[kind] = {};
+  return TA.bag[kind];
+}
+function taBagAdd(kind, key, n){
+  n = Math.round(n||0); if(!n || n < 0) return;
+  const b = taBagOf(kind);
+  b[key] = (b[key]||0) + n;
+}
+function taBagTake(kind, key, n){
+  const b = taBagOf(kind);
+  const have = b[key]||0;
+  n = Math.min(Math.max(0, Math.round(n||0)), have);
+  if(n <= 0) return 0;
+  b[key] = have - n;
+  if(!b[key]) delete b[key];
+  return n;
+}
+function taBagCount(kind, key){ const b = taBagOf(kind); return b[key]||0; }
+function taBagEmpty(){
+  const b = TA.bag || {};
+  for(const k in b){
+    const v = b[k];
+    if(typeof v === 'number'){ if(v > 0) return false; }
+    else if(v && typeof v === 'object'){ for(const kk in v){ if((v[kk]||0) > 0) return false; } }
+  }
+  return true;
+}
+function taBagSummary(max){
+  const parts = [];
+  const push = function(list, nameOf){
+    for(const k of Object.keys(list||{})){
+      if((list[k]||0) <= 0) continue;
+      parts.push(nameOf(k) + '×' + list[k]);
+      if(parts.length >= (max||8)) return true;
+    }
+    return false;
+  };
+  const seedName = k => ((CROPS[k]&&CROPS[k].name)||k) + '种子';
+  const cropN = k => (CROPS[k]&&CROPS[k].name)||k;
+  const oreN = k => (ORES[k]&&ORES[k].name)||k;
+  const fishN = k => { const f = FISH_TBL.filter(x=>x.id===k)[0]; return f?f.name:k; };
+  const goodN = k => (GOODS[k]&&GOODS[k].name)||k;
+  const foodN = k => (RECIPES[k]&&RECIPES[k].name)||k;
+  const craftN = k => (CRAFTED[k]&&CRAFTED[k].name)||k;
+  if(push(taBagOf('seeds'), seedName)) return parts.join('、');
+  if(push(taBagOf('crops'), cropN)) return parts.join('、');
+  if(push(taBagOf('ores'), oreN)) return parts.join('、');
+  if(push(taBagOf('fish'), fishN)) return parts.join('、');
+  if(push(taBagOf('goods'), goodN)) return parts.join('、');
+  if(push(taBagOf('food'), foodN)) return parts.join('、');
+  if(push(taBagOf('crafted'), craftN)) return parts.join('、');
+  if((TA.bag.fert&&TA.bag.fert.basic)>0) parts.push('基础肥料×'+TA.bag.fert.basic);
+  if((TA.bag.fert&&TA.bag.fert.premium)>0) parts.push('高级肥料×'+TA.bag.fert.premium);
+  if((TA.bag.bait||0)>0) parts.push('鱼饵×'+TA.bag.bait);
+  return parts.join('、');
+}
+
+/* ★ 5.94：AI 也能吃 —— 从厨房里挑一份回体力最多的料理；TA 吃就回 TA 的体力和血 */
+function eatBestFood(){
+  try{
+    const food = (typeof actorIsTA==='function' && actorIsTA()) ? taBagOf('food') : (GAME.food || {});
+    let best = null, bestE = 0;
+    for(const k of Object.keys(food)){
+      const cnt = food[k]|0; if(cnt <= 0) continue;
+      const r = RECIPES[k]; if(!r) continue;
+      const e = r.energy|0;
+      if(e > bestE){ best = k; bestE = e; }
+    }
+    if(!best) return '';
+    if(typeof actorIsTA==='function' && actorIsTA()) taBagTake('food', best, 1); else GAME.food[best]--;
+    const add = Math.max(1, bestE);
+    if(actorIsTA()){
+      TA.energy = Math.min(TA.maxEnergy, (TA.energy|0) + add);
+      TA.hp = Math.min(TA.maxHp, (TA.hp|0) + Math.max(1, Math.round(add / 4)));
+      return 'TA 吃了 ' + RECIPES[best].name + '（体力 ' + Math.round(TA.energy) + '/' + TA.maxEnergy
+        + '，血 ' + Math.round(TA.hp) + '/' + TA.maxHp + '）';
+    }
+    energy = Math.min(maxEnergy(), energy + add);
+    return '吃了 ' + RECIPES[best].name + '（体力 ' + Math.max(0, Math.round(energy)) + '/' + maxEnergy() + '）';
+  }catch(e){ return ''; }
+}
 function xpNeed(){ return 60 + ((GAME.level||1) - 1) * 40; }
 function addXp(n){
   GAME.xp = (GAME.xp||0) + n;
@@ -2047,7 +2465,7 @@ function enterFarm(){
   updateFarmNav();
   document.body.classList.add('in-farm');
   document.getElementById('enter').style.display='none';
-  placeTANearPlayer();                 /* TA 得跟着换坐标系，否则会按世界图坐标走进房子 */
+  syncTAScene();                 /* TA 得跟着换坐标系，否则会按世界图坐标走进房子 */
   toast('走到下方石子路可离开农场');
 }
 function exitFarm(){ sfx.close();
@@ -2059,7 +2477,7 @@ function exitFarm(){ sfx.close();
   document.getElementById('canbar').style.display='none';
   document.getElementById('farmnav').style.display='none';
   document.body.classList.remove('in-farm');
-  placeTANearPlayer();
+  syncTAScene();
 }
 
 /* ============ 小场景引擎 ============
@@ -2420,14 +2838,15 @@ function mineSuccess(){
   const n = MINING.node;
   MINING.on = false; MINING.prog = 0;
   if(!n || n.hp <= 0) return;
-  energy -= carency('mine', 4); n.hp--;
+  actorSpend(carency('mine', 4));      /* ★ 5.94：谁在挖扣谁的体力 */ n.hp--;
   sfx.breakRock();
   MINING.flash = 0.18;
   const o = ORES[n.kind];
   let got = 2 + (Math.random() < 0.5 ? 1 : 0);      /* 2~3 块 */
   got += PM.extraOre();
   if(PM.doubleOre() && Math.random() < 0.25) got *= 2;
-  GAME.ores[n.kind] = (GAME.ores[n.kind] || 0) + got;
+  if(actorIsTA()) taBagAdd('ores', n.kind, got);       /* ★ 5.98：AI 挖的进它背包 */
+  else GAME.ores[n.kind] = (GAME.ores[n.kind] || 0) + got;
   see('ores', n.kind);
   addSkillXp('mine', 10);
   spawnChips(n.x, n.y - 6, ORES[n.kind].col, 14, 210);
@@ -2449,7 +2868,7 @@ function mineSuccess(){
 function mineFail(){
   if(!MINING.on) return;
   MINING.on = false; MINING.prog = 0;
-  energy = Math.max(0, energy - 2);
+  if(actorIsTA()){ TA.energy = Math.max(0, (TA.energy|0) - 2); } else { energy = Math.max(0, energy - 2); }   /* ★ 5.94 */
   sfx.fail();
   toast('手滑了 · 石头没碎（−2 体力）');
 }
@@ -2539,7 +2958,7 @@ function enterSubScene(id){
   ['tools','canbar','farmnav','minebar'].forEach(k=>{
     const el = document.getElementById(k); if(el) el.style.display='none';
   });
-  placeTANearPlayer();
+  syncTAScene();
   if(sc.name === '牧场') initPets();
   if(sc.name === '矿洞') spawnSlimes();
   see('scenes', id);
@@ -2561,7 +2980,7 @@ function exitSubScene(){ sfx.close();
     P.x = back.x; P.y = back.y; P.path = null; P.dir = 'up';
     cam.x = Math.max(0, Math.min(WW - innerWidth,  P.x - innerWidth/2));
     cam.y = Math.max(0, Math.min(WH - innerHeight, P.y - innerHeight/2));
-    placeTANearPlayer();
+    syncTAScene();
     toast('出了屋子');
     return;
   }
@@ -2577,7 +2996,7 @@ function exitSubScene(){ sfx.close();
   cam.x = Math.max(0, Math.min(WW - innerWidth,  P.x - innerWidth/2));
   cam.y = Math.max(0, Math.min(WH - innerHeight, P.y - innerHeight/2));
   document.body.classList.remove('in-sub');
-  placeTANearPlayer();
+  syncTAScene();
   toast('离开 ' + nm);
 }
 
@@ -2607,11 +3026,11 @@ function usePlot(pl){
   if(tool==='fert'){
     if(!pl.tilled){ toast('先把地锄开'); return; }
     if(pl.fert){ toast('这块地已经施过肥了'); return; }
-    const useP = (GAME.fert && GAME.fert.premium > 0);
-    const useB = (GAME.fert && GAME.fert.basic > 0);
+    const useP = actorIsTA() ? (taBagCount('fert','premium') > 0) : (GAME.fert && GAME.fert.premium > 0);
+    const useB = actorIsTA() ? (taBagCount('fert','basic') > 0)   : (GAME.fert && GAME.fert.basic > 0);
     if(!useP && !useB){ toast('没有肥料了 · 杂货店有卖'); return; }
-    if(useP){ GAME.fert.premium--; pl.fert = 2; }
-    else    { GAME.fert.basic--;   pl.fert = 1; }
+    if(useP){ if(actorIsTA()) taBagTake('fert','premium',1); else GAME.fert.premium--; pl.fert = 2; }
+    else    { if(actorIsTA()) taBagTake('fert','basic',1);   else GAME.fert.basic--;   pl.fert = 1; }
     sfx.seed();
     bump('fert');
     toast(useP ? '施了高级肥料（收获 +1 · 生长可能更快）' : '施了基础肥料（收获 +1）');
@@ -2620,10 +3039,9 @@ function usePlot(pl){
   }
   if(tool==='hoe'){
     if(pl.tilled) return;
-    if(energy < 3) return;
     const hoeLv = (GAME.toolLv||{}).hoe || 1;
     const cells = hoeLv >= 3 ? 3 : (hoeLv === 2 ? 2 : 1);
-    energy -= carency('farm', 3);
+    if(!actorSpend(carency('farm', 3))) return;      /* ★ 5.94：谁在干活扣谁的体力 */
     for(let i = 0; i < cells; i++){
       const p2 = plots[pl.r * 14 + pl.c + i];
       if(p2 && !p2.tilled) p2.tilled = true;
@@ -2633,8 +3051,8 @@ function usePlot(pl){
   } else if(tool==='can'){
     if(!pl.tilled || pl.watered) return;
     if(can <= 0){ toast('水壶空了，去井边打水'); return; }
-    if(energy < 2) return;
-    energy -= carency('farm', 2); can--; pl.watered = true; sfx.water();
+    if(!actorSpend(carency('farm', 2))) return;       /* ★ 5.94 */
+    can--; pl.watered = true; sfx.water();
   } else {
     if(!pl.tilled) return;
     if(!GAME.seedsBy) GAME.seedsBy = {};
@@ -2648,7 +3066,8 @@ function usePlot(pl){
         if(!GAME.crops) GAME.crops = {};
         const bonus = pl.fert ? 1 : 0;                 /* 施过肥的地多收 1 个 */
         const totalGot = 1 + bonus;
-        GAME.crops[pl.crop] = (GAME.crops[pl.crop] || 0) + totalGot;
+        if(actorIsTA()) taBagAdd('crops', pl.crop, totalGot);     /* ★ 5.98：AI 收的进它自己背包 */
+        else GAME.crops[pl.crop] = (GAME.crops[pl.crop] || 0) + totalGot;
         /* 掷品质：施肥与技能都能提升，最高金星 */
         const q = cqOf(pl.crop);
         let qTag = '';
@@ -2684,14 +3103,23 @@ function usePlot(pl){
       toast(SEASON_NAMES[GAME.season] + '天种不了' + c.name + '（' + seasonTag(c) + '可种）· 温室可以');
       return;
     }
-    if((GAME.seedsBy[k] || 0) <= 0){
-      toast('没有' + c.name + '种子了 · 去杂货店买（点下方种子条换种）');
-      return;
+    if(actorIsTA()){
+      /* ★ 5.98：AI 种地用它自己背包里的种子 */
+      if(taBagCount('seeds', k) <= 0){
+        toast('TA 没有' + c.name + '种子了 · 让它 buy 买（或先给它）');
+        return;
+      }
+      taBagTake('seeds', k, 1);
+    } else {
+      if((GAME.seedsBy[k] || 0) <= 0){
+        toast('没有' + c.name + '种子了 · 去杂货店买（点下方种子条换种）');
+        return;
+      }
+      GAME.seedsBy[k]--;
     }
-    GAME.seedsBy[k]--;
     pl.crop = k; pl.stage = 1; sfx.seed();
     if(weather === '雨') pl.watered = true;
-    if(GAME.seedsBy[k] === 0) GAME.seedSel = firstOwnedSeed();   /* 用完了自动切到下一种 */
+    if(!actorIsTA() && GAME.seedsBy[k] === 0) GAME.seedSel = firstOwnedSeed();   /* 用完了自动切到下一种 */
   }
 }
 
@@ -2818,7 +3246,20 @@ let POI_1 = null, ENTRIES_1 = null;
 /* ============ 状态 ============ */
 const P = {x:300, y:360, dir:'down', frame:0, anim:0, path:null, pathIdx:0, moving:false};
 const TA = {x:404, y:372, dir:'down', frame:1, flip:false, t:0,
-            mode:'auto', wait:1.5, path:null, pathIdx:0, anim:0, bubble:null, stuck:0};
+            mode:'auto', wait:1.5, path:null, pathIdx:0, anim:0, bubble:null, stuck:0,
+            /* ★ 5.93：TA 自己属于哪个场景（出生在镇上）；away = 不在玩家当前场景（不画/不跟） */
+            scene:'world', away:false,
+            /* ★ 5.94：TA 自己的血量 / 体力 / 金币（AI 干活扣它自己的体力，买卖花它自己的钱） */
+            maxHp:100, hp:100, maxEnergy:120, energy:120, gold:500, hurtT:0, down:false,   /* ★ 6.03：TA 起始也 500 */
+            /* ★ 6.01：正在干的农活（走过去 → 一格一格干，不再瞬间完成） */
+            job:null,
+            /* ★ 6.04：TA 自己的武器（默认木剑）与击杀数 —— 玩家的装备不借给它 */
+            weaponLv:0, kills:0,
+            /* ★ 6.06：它自己的防具与戒指（和玩家分开算） */
+            bootLv:0, ring:null,
+            /* ★ 5.98：TA 自己的背包（和玩家的 GAME.* 分开算） */
+            bag:{ seeds:{}, crops:{}, ores:{}, fish:{}, goods:{}, food:{}, crafted:{},
+                  fert:{basic:0, premium:0}, bait:0 }};
 
 /* 有名字的地方 —— AI 可以说「去喷泉」，不用报坐标 */
 let POI = {
@@ -3146,6 +3587,429 @@ function placeTANearPlayer(){
   TA.x = P.x; TA.y = P.y;
 }
 
+/* ★ 5.93（用户口径：进农场时 AI 不要跟进来，就待在原地；喊「过来」才来）
+   —— 以前每次换场景都 placeTANearPlayer()，看起来就是"AI 一直跟着你"。
+   现在给场景记一个键：换场景时 TA 不在同一个键里就标成 away（不画、不自己走、不跟过来）；
+   只有 goTo / come（= 让它过来）才会把它叫进当前场景。 */
+function taSceneKey(){
+  if(scene === 'farm') return 'farm';
+  /* ★ 6.10：小场景按名字分开记 —— 以前农舍/矿洞/沙滩共用 'sub'，
+     换小场景时键没变，TA 会跟着你跑（D4）。 */
+  if(scene === 'sub' && curScene) return 'sub:' + (curScene.name || '');
+  return 'world';
+}
+function taSceneLabel(k){
+  k = String(k || '');
+  if(k === 'farm') return '农场';
+  if(k.indexOf('sub:') === 0){ return k.slice(4) || '屋里'; }
+  if(k === 'sub') return '屋里';            /* 老存档里的旧键 */
+  return '镇上';
+}
+function syncTAScene(){
+  if(!TA) return;
+  const k = taSceneKey();
+  if(!TA.scene){ TA.scene = k; TA.away = false; return; }
+  if(TA.scene !== k){
+    TA.away = true;
+    TA.path = null; TA.pathIdx = 0; TA.wait = 1.5;
+    try{ toast('TA 还在' + taSceneLabel(TA.scene) + '，要它来就喊「过来」'); }catch(e){}
+  }else{
+    TA.away = false;
+  }
+}
+function bringTAHere(){
+  if(!TA) return;
+  const k = taSceneKey();
+  if(TA.away || TA.scene !== k){
+    TA.scene = k; TA.away = false;
+    TA.path = null; TA.pathIdx = 0;
+    placeTANearPlayer();
+  }
+}
+
+/* ★ 6.01（用户口径：AI 浇水一下就浇完、也不走过去）——
+   农活改成"走过去、一格一格干"的队列：TA.job = {kind, items, i, phase, t, done}
+   每帧由 taJobStep() 驱动；走到格子旁边才真正下手，每格都有走路 + 动作的时间。 */
+/* ★ 6.04：TA 自己的战斗 / 挖矿 / 找路 / 诊所 —— 玩家能干的，它也能干 */
+function taWeapon(){ return WEAPONS[TA.weaponLv|0] || WEAPONS[0]; }
+function taBoot(){ return BOOTS[TA.bootLv|0] || BOOTS[0]; }
+function taArmorPct(){ return taBoot().armor; }
+function taRingDef(){ return (RINGS || []).filter(function(r){ return r.id === TA.ring; })[0] || null; }
+function taAtkMul(){ return TA.ring === 'atk' ? 1.3 : 1; }
+function taDefMul(){ return TA.ring === 'def' ? 0.85 : 1; }
+function taLuckBonus(){ return TA.ring === 'luck' ? 0.20 : 0; }   /* ★ 6.07：幸运戒指真的生效 */
+function taBusyMsg(){
+  return { ok:false, msg:'我还在' + (TA.job.label||'干活') + '（' + (TA.job.i|0) + '/' + TA.job.items.length + '），干完再叫我' };
+}
+function nearestSlimeToTA(range){
+  let best = null, bd = 1e9;
+  for(const sl of slimes){
+    if(!sl || sl.hp <= 0) continue;
+    const d = Math.hypot(sl.x - TA.x, sl.y - TA.y);
+    if(d < bd){ bd = d; best = sl; }
+  }
+  return (best && bd < (range || 320)) ? best : null;
+}
+function nearestMineNodeToTA(range){
+  let best = null, bd = 1e9;
+  for(const n of (mineNodes || [])){
+    if(!n || n.hp <= 0) continue;
+    const d = Math.hypot(n.x - TA.x, n.y - TA.y);
+    if(d < bd){ bd = d; best = n; }
+  }
+  return (best && bd < (range || 340)) ? best : null;
+}
+/* TA 挥一剑：伤害用自己的木剑，杀掉给 TA 自己进钱 */
+function taAttackSlime(sl){
+  if(!sl || sl.hp <= 0) return false;
+  TA.swings = (TA.swings|0) + 1;   /* 调试计数 */
+  const w = taWeapon();
+  /* ★ 6.11：和玩家一样吃怪物的护甲（sl.armor<1 减伤），以前 TA 无视护甲 */
+  let dmg = Math.round(w.dmg * taAtkMul() * (0.9 + Math.random() * 0.2) * (sl.armor || 1));
+  if(Math.random() < 0.15) dmg *= 2;
+  sl.hp -= dmg; sl.hurt = 0.2;
+  try{ showFx('镪！ -' + dmg, 'good', 430); sfx.mine(); }catch(e){}
+  const dx = sl.x - TA.x, dy = sl.y - TA.y, d = Math.hypot(dx, dy) || 1;
+  sl.x += dx / d * 14; sl.y += dy / d * 14;
+  if(sl.hp <= 0){
+    const idx = slimes.indexOf(sl);
+    if(idx >= 0) slimes.splice(idx, 1);
+    TA.kills = (TA.kills|0) + 1;
+    const coin = 10 + Math.floor(Math.random() * 16);
+    TA.gold = (TA.gold|0) + coin;
+    try{ showFx('打倒！+' + coin + ' 金', 'good', 1300); sfx.coin(); }catch(e){}
+    saveGame();
+  }
+  return true;
+}
+/* TA 敲一下矿点（敲碎时矿石进它背包，走 5.98 的分流） */
+function taMineHit(node){
+  if(!node || node.hp <= 0) return false;
+  const cost = carency('mine', 4);
+  if((TA.energy|0) < cost) return false;
+  let ok = false;
+  try{
+    asTA(function(){
+      /* ★ 6.10：这里别再手扣一次 —— mineSuccess() 里已经 actorSpend(carency('mine',4))，
+         扣的是「当前动作的执行者」（asTA 下就是 TA）；以前两处都扣 → 敲一下掉 8 点（K5）。 */
+      MINING.node = node; MINING.on = true; MINING.prog = 0.99;
+      mineSuccess();
+      ok = true;
+    });
+  }catch(e){ ok = false; }
+  return ok;
+}
+/* TA 走到某个 POI 附近了没（诊所/铁匠铺/杂货店/沙漠商人…） */
+function taPoiDist(key){
+  const pt = POI && POI[key];
+  if(!pt) return 1e9;
+  return Math.hypot(pt.x - TA.x, pt.y - TA.y);
+}
+function taAtPoi(key, r){ return taPoiDist(key) <= (r || 110); }
+/* 收尾：干活完了统一弹一句 */
+/* ★ 6.04：TA 买东西 —— 先判断该去哪家店，不在门口就走过去，到了再掏钱 */
+const TA_POI_CN = { shop:'杂货店', smith:'铁匠铺', desert:'沙漠商人' };
+function doBuyTA(spec){
+  const kind = spec.kind, key = spec.key, n = spec.n, want = spec.want;
+  if(kind === 'seed' || kind === 'rare'){
+    const c = CROPS[key];
+    const cost = (c.buy|0) * n;
+    if(!walletPay(cost)) return { ok:false, msg:'钱不够：要 ' + cost + ' 金，我有 ' + walletGet() };
+    taBagAdd('seeds', key, n);
+    saveGame();
+    return { ok:true, msg:'买了 ' + n + ' 颗' + c.name + '种子（花 ' + cost + '，剩 ' + walletGet() + '）' };
+  }
+  if(kind === 'fert'){
+    const premium = /高级/.test(want);
+    const cost = (premium ? 120 : 40) * n;
+    if(!walletPay(cost)) return { ok:false, msg:'钱不够：要 ' + cost + ' 金，我有 ' + walletGet() };
+    const bk = premium ? 'premium' : 'basic';
+    taBagOf('fert')[bk] = (taBagOf('fert')[bk]||0) + n;
+    saveGame();
+    return { ok:true, msg:'买了 ' + n + ' 份' + (premium?'高级':'基础') + '肥料（剩 ' + walletGet() + '）' };
+  }
+  if(kind === 'potion'){
+    const cost = 90 * n;
+    if(!walletPay(cost)) return { ok:false, msg:'钱不够：要 ' + cost + ' 金，我有 ' + walletGet() };
+    TA.energy = Math.min(TA.maxEnergy|0, (TA.energy|0) + 80 * n);
+    saveGame();
+    return { ok:true, msg:'买了 ' + n + ' 瓶药水并喝下（体力 ' + Math.round(TA.energy) + '/' + (TA.maxEnergy|0) + '）' };
+  }
+  if(kind === 'boot'){
+    const lv = spec.lv;
+    if(lv <= (TA.bootLv|0)) return { ok:false, msg:'我已经穿着更好的鞋了（' + taBoot().name + '）' };
+    const price = (BOOTS[lv] && BOOTS[lv].price) || 0;
+    if(!walletPay(price)) return { ok:false, msg:'钱不够：' + BOOTS[lv].name + ' 要 ' + price + ' 金，我有 ' + walletGet() };
+    TA.bootLv = lv;
+    saveGame();
+    return { ok:true, msg:'换上' + taBoot().name + '（减伤 ' + Math.round(taArmorPct()*100) + '%，花 ' + price + '）' };
+  }
+  if(kind === 'ring'){
+    const ring = (RINGS || []).filter(function(r){ return r.id === spec.ringId; })[0];
+    if(!ring) return { ok:false, msg:'没有这枚戒指' };
+    if(TA.ring === ring.id) return { ok:false, msg:'我已经戴着' + ring.name + '了' };
+    if(!walletPay(ring.price)) return { ok:false, msg:'钱不够：' + ring.name + ' 要 ' + ring.price + ' 金，我有 ' + walletGet() };
+    TA.ring = ring.id;
+    saveGame();
+    return { ok:true, msg:'戴上' + ring.name + '（' + ring.desc + '，花 ' + ring.price + '）' };
+  }
+  if(kind === 'weapon'){
+    const WP = { '木剑':0, '铜剑':1, '银剑':2 };
+    const lv = WP[want];
+    if(lv == null) return { ok:false, msg:'没有这把武器' };
+    if(lv <= (TA.weaponLv|0)) return { ok:false, msg:'我已经有更好的了（' + taWeapon().name + '）' };
+    const price = (WEAPONS[lv] && WEAPONS[lv].price) || 0;
+    if(!walletPay(price)) return { ok:false, msg:'钱不够：' + want + ' 要 ' + price + ' 金，我有 ' + walletGet() };
+    TA.weaponLv = lv;
+    saveGame();
+    return { ok:true, msg:'买了' + want + '（攻击 ' + taWeapon().dmg + '，花 ' + price + '）' };
+  }
+  return { ok:false, msg:'不会买这个' };
+}
+function taBuyCommand(a){
+  const want = String(a.item || a.seed || a.name || '').trim();
+  const n = Math.max(1, Math.min(99, parseInt(a.n, 10) || 1));
+  if(!want) return { ok:false, msg:'买什么？给 {item:"草莓种子", n:1}' };
+  let kind = '', key = '', poi = 'shop';
+  for(const k of Object.keys(CROPS)){
+    const c = CROPS[k];
+    if(k === want || c.name === want || (c.name + '种子') === want){ key = k; kind = c.rare ? 'rare' : 'seed'; break; }
+  }
+  if(!kind && /肥料/.test(want)) kind = 'fert';
+  if(!kind && /药水/.test(want)) kind = 'potion';
+  const WP = { '木剑':0, '铜剑':1, '银剑':2 };
+  if(!kind && Object.prototype.hasOwnProperty.call(WP, want)) kind = 'weapon';
+  /* ★ 6.06：铁匠铺的防具与戒指 */
+  let bootLv = -1;
+  for(let bi = 0; bi < BOOTS.length; bi++){ if(BOOTS[bi].name === want || (want === '靴子' && bi === 1)) { bootLv = bi; break; } }
+  if(!kind && bootLv > 0) kind = 'boot';
+  let ringId = null;
+  for(const rr of (RINGS || [])){ if(rr.name === want || rr.id === want || (rr.name + '戒指') === want) { ringId = rr.id; break; } }
+  if(!kind && ringId) kind = 'ring';
+  if(!kind) return { ok:false, msg:'店里没有「' + want + '」。能买：种子/肥料/药水/（铁匠铺）铜剑·银剑·皮靴·铁靴·守护/战士/幸运戒指；稀有种子要去沙漠' };
+  if(kind === 'weapon' || kind === 'boot' || kind === 'ring') poi = 'smith';
+  if(kind === 'rare') poi = 'desert';
+  if(TA.job) return taBusyMsg();
+  const spec = { kind:kind, key:key, n:n, want:want, lv:(bootLv>0?bootLv:0), ringId:ringId };
+  /* ★ 6.07：TA 只能待在你所在的场景；你不在镇上时它在农场/矿洞/海边，走不到店门口 ——
+     这种情况直接结算（当作它托人去店里拿），否则"AI 自己去买"会永远卡在走路。
+     ★ 6.10：你在镇上、但 TA 还留在农场/矿洞（away）时同理 —— 以前照样起走路 job，
+     下一帧被 away 逻辑清掉，回执却是「走去铁匠铺买…（到了再掏钱）」= 假成功（K6/K7/K11）。 */
+  if(scene !== 'world' || TA.away){
+    const r0 = asTA(function(){ return doBuyTA(spec); });
+    const tail = (scene !== 'world') ? '（你不在镇上，它就托店主留了货）'
+                                     : '（它不在镇上，托店主把货留着了）';
+    return r0.ok ? { msg:r0.msg + tail } : r0;
+  }
+  if(!taAtPoi(poi, 230)){
+    taJobStart('shop', [POI[poi]], '去买' + want, { spec:spec });
+    return { msg:'走去' + (TA_POI_CN[poi]||poi) + '买' + want + '（到了再掏钱）' };
+  }
+  return asTA(function(){ return doBuyTA({ kind:kind, key:key, n:n, want:want, lv:(bootLv>0?bootLv:0), ringId:ringId }); });
+}
+
+/* ★ 6.04：玩家把金币给 TA（命令和面板按钮共用） */
+function giveToTA(n){
+  n = Math.max(0, Math.round(n|0));
+  if(!n) return { ok:false, msg:'给多少？' };
+  if((GAME.gold|0) < n) return { ok:false, msg:'你只有 ' + (GAME.gold|0) + ' 金，给不了 ' + n };
+  GAME.gold = (GAME.gold|0) - n;
+  TA.gold = (TA.gold|0) + n;
+  try{ sfx.coin(); showFx('给 TA ' + n + ' 金', 'good', 1300); }catch(e){}
+  try{ renderTA(); }catch(e){}
+  saveGame();
+  return { ok:true, msg:'给了 TA ' + n + ' 金（你现在 ' + (GAME.gold|0) + '，TA 有 ' + (TA.gold|0) + '）' };
+}
+
+function taJobFinish(){
+  const j = TA.job; if(!j) return;
+  const n = j.done, lab = j.label || '干完了';
+  TA.job = null; TA.path = null; TA.pathIdx = 0;
+  TA.bubble = { text: lab + '（' + n + '）', t: 4.5 };
+  TA.wait = 1.2;
+  try{ emit('job', { kind: j.kind, done: n }); }catch(e){}
+}
+
+function plotCenter(pl){
+  const g = FARM.plot;
+  return { x: g.x + pl.c*g.cw + g.cw/2, y: rowTop(pl.r) + rowH(pl.r)/2 };
+}
+function taJobCancel(){
+  if(TA.job) TA.job = null;
+  TA.path = null; TA.pathIdx = 0;
+}
+function taJobFail(msg){
+  TA.bubble = { text: msg, t: 4.5 };
+  TA.job = null; TA.path = null;
+}
+function taJobStart(kind, items, label, extra){
+  if(!items || !items.length) return false;
+  TA.job = { kind: kind, items: items, i: 0, phase: 'walk', t: 0, done: 0, label: label || '' };
+  if(extra) for(const kk in extra) TA.job[kk] = extra[kk];
+  TA.mode = 'command'; TA.wait = 0; TA.path = null;
+  return true;
+}
+/* 以 TA 的身份对一块地做一次操作；返回是否真的成功 */
+function asTAPlotWork(kind, pl){
+  if(!pl) return false;
+  const before = { tilled: !!pl.tilled, crop: pl.crop || null, fert: pl.fert || 0 };
+  const toolBefore = tool;                    /* ★ 6.11：干完把玩家的工具还回去 */
+  try{
+    asTA(function(){
+      tool = kind === 'till' ? 'hoe' : kind === 'plant' ? 'seed' : kind === 'fert' ? 'fert' : 'hand';
+      usePlot(pl);
+    });
+  }catch(e){ return false; }
+  finally { try{ tool = toolBefore; }catch(e){} }
+  if(kind === 'till')    return !before.tilled && !!pl.tilled;
+  if(kind === 'plant')   return !before.crop && !!pl.crop;
+  if(kind === 'fert')    return (pl.fert||0) > before.fert;
+  if(kind === 'harvest') return !!before.crop && !pl.crop;
+  return false;
+}
+function taJobStep(dt, walking){
+  const j = TA.job;
+  if(!j) return;
+  if(TA.away || TA.down){ taJobCancel(); return; }
+  /* ★ 6.11：买东西/去诊所没有失败出口 —— 路被挡时每帧重试，永远卡住，
+     之后所有 TA 指令都只会得到「我还在…」。给 30 秒上限并报个明白。 */
+  if(j.kind === 'shop' || j.kind === 'heal'){
+    j.age = (j.age || 0) + dt;
+    if(j.age > 30){ taJobFail('走不过去，先不去了（可能被挡住或路不通）'); return; }
+  }
+
+  /* --- 打架：怪会动，每帧重新贴上去 --- */
+  if(j.kind === 'fight'){
+    const sl = j.tgt;
+    if(!sl || sl.hp <= 0 || slimes.indexOf(sl) < 0){ j.done++; taJobFinish(); return; }
+    const dd = Math.hypot(sl.x - TA.x, sl.y - TA.y);
+    if(dd > 46){
+      if(!TA.path || (TA.t - (j.re || 0) > 0.5)){
+        j.re = TA.t;
+        const p2 = findPath(TA.x, TA.y, sl.x, sl.y);
+        if(p2 && p2.length){ TA.path = p2; TA.pathIdx = 0; }
+      }
+      return;
+    }
+    TA.path = null;
+    j.t = (j.t || 0) - dt;
+    if(j.t <= 0){ j.t = 0.62; taAttackSlime(sl); }
+    if(!sl || sl.hp <= 0){ j.done++; taJobFinish(); }
+    return;
+  }
+  /* --- 敲矿：走到矿点旁，一下一下敲 --- */
+  if(j.kind === 'mine'){
+    const nd = j.items[j.i];
+    if(!nd || nd.hp <= 0){ j.i++; TA.path = null; j.t = 0; if(j.i >= j.items.length) taJobFinish(); return; }
+    const dm = Math.hypot(nd.x - TA.x, nd.y - TA.y);
+    if(dm > 54){
+      if(!TA.path){ const p3 = findPath(TA.x, TA.y, nd.x, nd.y); if(p3 && p3.length){ TA.path = p3; TA.pathIdx = 0; } }
+      return;
+    }
+    TA.path = null;
+    j.t = (j.t || 0) - dt;
+    if(j.t <= 0){
+      j.t = 0.8 / (1 + taLuckBonus());     /* ★ 6.07：幸运戒指 = 敲得更快 */
+      if(!taMineHit(nd)){ taJobFail('体力不够了，先歇会儿再挖'); return; }
+      j.done++;
+      if(nd.hp <= 0){ j.i++; TA.path = null; if(j.i >= j.items.length) taJobFinish(); }
+    }
+    return;
+  }
+  /* --- 走到店里买东西 --- */
+  if(j.kind === 'shop'){
+    const pt = j.items[0];
+    if(!pt){ taJobFinish(); return; }
+    const ds = Math.hypot(pt.x - TA.x, pt.y - TA.y);
+    if(ds > 70){
+      if(!TA.path){ const p5 = findPath(TA.x, TA.y, pt.x, pt.y); if(p5 && p5.length){ TA.path = p5; TA.pathIdx = 0; } }
+      return;
+    }
+    TA.path = null;
+    const spec = j.spec || {};
+    const r = asTA(function(){ return doBuyTA(spec); });   /* ★ 6.04：花的是 TA 自己的钱 */
+    j.done++;
+    TA.bubble = { text: r.ok ? r.msg : ('买不了：' + r.msg), t: 5 };
+    taJobFinish();
+    return;
+  }
+  /* --- 去诊所治疗 --- */
+  if(j.kind === 'heal'){
+    const goal = POI.clinic;
+    const dh = Math.hypot(goal.x - TA.x, goal.y - TA.y);
+    if(dh > 60){
+      if(!TA.path){ const p4 = findPath(TA.x, TA.y, goal.x, goal.y); if(p4 && p4.length){ TA.path = p4; TA.pathIdx = 0; } }
+      return;
+    }
+    TA.path = null;
+    const fee = Math.max(60, Math.round((TA.gold|0) * 0.12));
+    if((TA.gold|0) < fee){ taJobFail('钱不够看医生（要 ' + fee + ' 金，我有 ' + (TA.gold|0) + '）'); return; }
+    TA.gold = (TA.gold|0) - fee;
+    TA.hp = TA.maxHp|0; TA.energy = TA.maxEnergy|0; TA.down = false;
+    j.done++;
+    TA.bubble = { text: '治好了（花 ' + fee + ' 金）', t: 4.5 };
+    taJobFinish();
+    return;
+  }
+
+  /* --- 到了：动手 --- */
+  if(j.phase === 'act'){
+    j.t -= dt;
+    if(j.t > 0) return;
+    const pl = j.items[j.i];
+    let ok = false;
+    if(pl){
+      if(j.kind === 'water'){
+        let _paid = false;
+        asTA(function(){ _paid = actorSpend(carency('farm', 2)); });   /* ★ 6.01：扣 TA 自己的体力 */
+        if(_paid){
+          pl.watered = true; ok = true;
+          try{ sfx.water(); }catch(e){}
+          try{ showFx('浇水 +1', '', 700); }catch(e){}
+        }else{
+          taJobFail('体力不够了，先歇会儿再浇');
+          return;
+        }
+      }else if(j.kind === 'plant'){
+        const prevSel = GAME.seedSel;
+        if(j.seed) GAME.seedSel = j.seed;
+        ok = asTAPlotWork('plant', pl);
+        GAME.seedSel = prevSel;
+      }else{
+        ok = asTAPlotWork(j.kind, pl);
+      }
+    }
+    if(!ok && pl && j.kind !== 'water'){
+      taJobFail('干不动了（体力或材料不够）');
+      return;
+    }
+    if(ok) j.done++;
+    j.i++; j.phase = 'walk'; j.t = 0; TA.path = null;
+    if(j.i >= j.items.length){
+      const n = j.done, lab = j.label || '干完了';
+      TA.job = null;
+      TA.bubble = { text: lab + '（' + n + ' 格）', t: 4.5 };
+      TA.wait = 1.2;
+      try{ emit('job', { kind: j.kind, done: n }); }catch(e){}
+    }
+    return;
+  }
+
+  /* --- 走过去 --- */
+  const pl2 = j.items[j.i];
+  if(!pl2){ TA.job = null; return; }
+  const c = plotCenter(pl2);
+  const d = Math.hypot(TA.x - c.x, TA.y - c.y);
+  if(d < 34){ j.phase = 'act'; j.t = 0.42; TA.path = null; return; }
+  if(!TA.path){
+    const p = findPath(TA.x, TA.y, c.x, c.y);
+    if(p && p.length){ TA.path = p; TA.pathIdx = 0; }
+    else { j.phase = 'act'; j.t = 0.42; }   /* 走不过去就在近处动手，别卡死 */
+  }
+}
+
+
+
 /* TA 溜达的目标：世界里去 POI，农场里就在玩家周围瞎转 */
 function taWanderTarget(){
   if(scene === 'world'){
@@ -3173,6 +4037,8 @@ function taThink(dt){
 /* ============ 对外接口（以后接 App 的 AI） ============ */
 window.TA_API = {
   goTo(x,y){
+    taJobCancel();                 /* ★ 6.01：新指令打断手上的农活 */
+    bringTAHere();                 /* ★ 5.93：让它过来 = 先把它叫进当前场景，再走过去 */
     TA.mode = 'command'; TA.wait = 0;
     const p = findPath(TA.x, TA.y, +x, +y);
     if(p && p.length){ TA.path = p; TA.pathIdx = 0; return true; }
@@ -3185,7 +4051,7 @@ window.TA_API = {
     return this.goTo(p.x, p.y);
   },
   say(text){ TA.bubble = { text: String(text).slice(0,60), t: 4.5 }; return true; },
-  stop(){ TA.path = null; TA.mode='command'; TA.wait = 999; return true; },
+  stop(){ taJobCancel(); TA.path = null; TA.mode='command'; TA.wait = 999; return true; },
   auto(on){ TA.mode = on === false ? 'idle' : 'auto'; TA.wait = 0; return TA.mode; },
   wherever(){
     /* 走到玩家旁边 */
@@ -3537,9 +4403,12 @@ function endDay(){
 
   /* ② 所有农地一起长（不只在当前这块） */
   for(const f of farms) for(const pl of f){
-    if(pl.crop && pl.watered && pl.stage < 4){ pl.stage++; grownCount++; }
-    if(pl.crop && pl.watered && pl.fert === 2 && pl.stage < 4 && Math.random() < 0.35) pl.stage++;
-    if(pl.crop && pl.watered && pl.stage < 4 && PM.growFast() && Math.random() < PM.growFast()) pl.stage++;
+    /* ★ 5.99 修：这里原来把 stage 卡在 4，而作物 grow 是 4~13 天 ——
+       草莓(8)/南瓜(12)/星之果(13) 永远长不熟。改成按各作物的 grow 封顶。 */
+    const _gm = (pl.crop && CROPS[pl.crop] && CROPS[pl.crop].grow) || 4;
+    if(pl.crop && pl.watered && pl.stage < _gm){ pl.stage++; grownCount++; }
+    if(pl.crop && pl.watered && pl.fert === 2 && pl.stage < _gm && Math.random() < 0.35) pl.stage++;
+    if(pl.crop && pl.watered && pl.stage < _gm && PM.growFast() && Math.random() < PM.growFast()) pl.stage++;
     pl.watered = false;
   }
 
@@ -3578,6 +4447,14 @@ function endDay(){
   energy = maxEnergy();
   can = canMax();
   GAME.hp = GAME.maxHp || 100;            /* 睡一觉血回满 */
+  /* ★ 6.09：睡一觉 TA 也回满。以前只有 AI 的 sleep 命令能救它，
+     玩家点床睡完 TA 还是 0 血 + down，之后所有 TA 指令都被拦（永久卡死）。 */
+  try{
+    TA.hp = TA.maxHp || 100;
+    TA.energy = TA.maxEnergy || 120;
+    TA.down = false;
+    taJobCancel();
+  }catch(e){}
   GAME.mineLayer = 1;               /* 每日刷新：回到第 1 层，矿点全满 */
   resetMineNodes();
 
@@ -3656,19 +4533,21 @@ function tickTime(dt){
   const E = Math.max(0,Math.round(energy)), G = GAME.gold||0;
   const SEL = GAME.seedSel || 'strawberry';
   const S = (GAME.seedsBy && GAME.seedsBy[SEL]) || 0;
-  const sig = clock + '|s'+scene + '|h'+Math.round(GAME.hp||0) +
-              (scene==='farm' ? '|E'+E+'|G'+G+'|S'+SEL+S : '|G'+G);
+  const PHP = Math.round(GAME.hp == null ? 100 : GAME.hp), PMAX = Math.round(GAME.maxHp || 100);
+  const sig = clock + '|s'+scene + '|h'+PHP+'|e'+E + '|G'+G + '|S'+SEL+S;
+  if(taEl && taEl.classList.contains('on') && (!update._taT || performance.now() - update._taT > 400)){
+    update._taT = performance.now();
+    try{ renderTA(); }catch(e){}
+  }
   if(hud.dataset.sig !== sig){
     hud.dataset.sig = sig;
     const I = n => '<svg class="ico" aria-hidden="true"><use href="#i-'+n+'"/></svg>';
-    const inMine = (scene === 'sub' && curScene && curScene.name === '矿洞');
-    hud.innerHTML = clock + (scene==='farm'
-      ? '   ' + I('heart') + ' ' + E + '/' + maxEnergy() +
-        '   ' + I('coin') + ' ' + G + '   ' + I('seed') + ' ' + cropName(SEL) + '×' + S
-      : (inMine
-          ? '   ' + I('heart') + ' ' + Math.round(GAME.hp) + '/' + GAME.maxHp +
-            '   ' + I('coin') + ' ' + G
-          : '   ' + I('coin') + ' ' + G));
+    /* ★ 5.94：血量一直显示（以前只在矿洞里显示血）；体力也一直显示 */
+    hud.innerHTML = clock
+      + '   ' + I('heart') + ' ' + PHP + '/' + PMAX
+      + '   ' + I('drop') + ' ' + E + '/' + maxEnergy()
+      + '   ' + I('coin') + ' ' + G
+      + (scene==='farm' ? '   ' + I('seed') + ' ' + cropName(SEL) + '×' + S : '');
   }
 }
 
@@ -3727,13 +4606,29 @@ function update(dt){
 
   /* TA：有路径就走，没路径就自己找事 / 或者面向玩家待机 */
   TA.t += dt;
-  if(!TA._chk || TA.t - TA._chk > 2){ TA._chk = TA.t; taRescue(); }
-  const taWalking = taFollow(dt);
-  if(!taWalking) taThink(dt);
-  if(TA.bubble){ TA.bubble.t -= dt; if(TA.bubble.t <= 0) TA.bubble = null; }
-  if(!taWalking){
-    TA.frame = (Math.floor(TA.t / 0.7) % 2) ? 3 : 1;   /* 站着时的轻微起伏 */
-    taSetDir(P.x - TA.x, P.y - TA.y);                   /* 空闲时一直看着你 */
+  if(TA.hurtT > 0) TA.hurtT -= dt;
+  if(TA.down){ TA.path = null; }
+  if(TA.away || TA.down){
+    /* ★ 5.93/5.94：TA 不在这个场景或被打倒了 —— 不救援、不自己走、不面向玩家 */
+    TA.path = null;
+    if(TA.job) TA.job = null;
+    if(TA.bubble){ TA.bubble.t -= dt; if(TA.bubble.t <= 0) TA.bubble = null; }
+  }else{
+    let taWalking = taFollow(dt);
+    if(TA.job){
+      /* ★ 6.01：干活时由队列驱动 —— 走到格子边上再动手，干完一格再走下一格 */
+      if(!TA._chk || TA.t - TA._chk > 2){ TA._chk = TA.t; taRescue(); }
+      taJobStep(dt, taWalking);
+      taWalking = !!TA.path;
+    }else{
+      if(!TA._chk || TA.t - TA._chk > 2){ TA._chk = TA.t; taRescue(); }
+      if(!taWalking) taThink(dt);
+    }
+    if(TA.bubble){ TA.bubble.t -= dt; if(TA.bubble.t <= 0) TA.bubble = null; }
+    if(!taWalking && !TA.job){
+      TA.frame = (Math.floor(TA.t / 0.7) % 2) ? 3 : 1;   /* 站着时的轻微起伏 */
+      taSetDir(P.x - TA.x, P.y - TA.y);                   /* 空闲时一直看着你 */
+    }
   }
 
   /* 相机 */
@@ -4369,8 +5264,9 @@ function draw(){
   /* ---- 2. 人物（夜里跟着变暗）---- */
   const actors = [
     {s:sprites,   st:P,  isPlayer:true},
-    {s:taSprites, st:TA, isPlayer:false},
-  ].sort((a,b)=> a.st.y - b.st.y);
+  ];
+  if(!TA.away) actors.push({s:taSprites, st:TA, isPlayer:false});   /* ★ 5.93：不在本场景就不画 */
+  actors.sort((a,b)=> a.st.y - b.st.y);
   for(const a of actors){
     const arr = a.s[a.st.dir] || a.s.down;
     const img = arr && arr[a.st.frame];
@@ -4455,6 +5351,7 @@ function draw(){
 /* ============ 主循环 ============ */
 let last = performance.now();
 function loop(now){
+  if(window.__svPaused) return;                 /* 被外壳暂停了：不出帧，也不用再排下一帧 */
   const dt = Math.min(0.05, (now-last)/1000); last = now;
   update(dt);
   /* AI 导航：走到入口附近就自动进门（给 goto 场景目标用） */
@@ -4467,6 +5364,11 @@ function loop(now){
   }
   updateWeather(dt);
   draw();
+  /* 第一帧真的画出来了 → 告诉外壳收掉"载入中"的纸片（比猜时间、比查 canvas 都准） */
+  if(!window.__svReadySent){
+    window.__svReadySent = 1;
+    try{ if(window.parent && window.parent !== window) window.parent.postMessage({ t:'sv:ready' }, '*'); }catch(_){}
+  }
   if(debug){
     document.getElementById('dbg').textContent =
       `场景:${scene}  x:${P.x|0} y:${P.y|0}  格:${Math.floor(P.x/CELL)},${Math.floor(P.y/CELL)}` +
@@ -4477,6 +5379,29 @@ function loop(now){
   }
   requestAnimationFrame(loop);
 }
+
+/* ============ 外壳控制：暂停 / 继续 ==========================================
+   2026-10-31：退出星露谷后音乐还在响 —— 音乐是 setInterval 起的，iframe 只是 display:none，
+   定时器照跑。这里收到外壳的暂停指令就真的停：停音乐、挂起 AudioContext、
+   停渲染循环、顺手存档。再打开时收到 sv:resume 原地恢复（不重新加载）。
+   ========================================================================== */
+addEventListener('message', (e)=>{
+  const d = e.data || {};
+  if(d.t === 'sv:pause'){
+    if(window.__svPaused) return;
+    window.__svPaused = 1;
+    try{ stopMusic(); }catch(_){}
+    try{ if(SFX.ctx && SFX.ctx.state === 'running') SFX.ctx.suspend(); }catch(_){}
+    try{ saveGame(); }catch(_){}
+  }else if(d.t === 'sv:resume'){
+    if(!window.__svPaused) return;
+    window.__svPaused = 0;
+    try{ if(SFX.ctx && SFX.ctx.state === 'suspended') SFX.ctx.resume(); }catch(_){}
+    try{ if(SFX.on && SFX.music) startMusic(); }catch(_){}
+    last = performance.now();
+    requestAnimationFrame(loop);
+  }
+});
 
 /* ============ 入口按钮 ============ */
 document.getElementById('enter').addEventListener('click', ()=>{
@@ -5345,12 +6270,64 @@ function checkAch(){
 /* ============ 内置攻略 ============ */
 const GUIDE = [
   { t:'开局七天', lines:[
-    '第 1 天：锄 10 格 → 买 5 颗芜菁种子（10 金/颗）→ 全部浇水 → 睡觉',
-    '第 2~4 天：每天浇一次水；体力有剩就去沙滩钓鱼（普通鱼 35~260 金）',
-    '第 5 天：芜菁 4 天成熟，收 5 个卖 300 金；攒钱买草莓（20 金，8 天卖 120）',
+    '第 1 天：锄 10 格 → 买 5 颗芜菁种子（10 金/颗，4 天熟）→ 全部浇水 → 睡觉',
+    '第 2~4 天：每天先浇水再干别的；剩余体力去沙滩钓鱼（普通鱼 35~260 金）',
+    '第 5 天：芜菁收 5 个卖 300 金；转头买草莓（20 金/颗，8 天熟，卖 120）',
     '第 6~7 天：下矿洞挖铜（3 下碎一个，出 2~3 块）→ 加工成铜锭',
-    '铜锭×2 能做一个洒水器，夜里自动浇 8 格，从此省一半体力',
-    '别急着买动物：先有每天稳定的现金流再说'
+    '铜锭×2 做一个洒水器：每晚自动浇周围 8 格，从此省一半体力',
+    '第一周目标：洒水器 ≥1 · 草莓 ≥10 格 · 一把铜剑（300 金）',
+    '别急着买动物：先有每天稳定的现金流再说（回本 5~12 天）',
+    '每晚睡前看顶部体力：见底就睡，别硬撑到 22:00',
+    '缺钱的下策：把矿卖给铁匠铺（120%），比杂货店划算'
+  ]},
+  { t:'操作与界面', lines:[
+    '顶部一行：日期时间 · ❤血量 · 💧体力 · 💰金币（在农场时后面还有种子数）',
+    '右侧竖排按钮：TA · 攻略 · 个人 · 背包 · 地图 · 聊天',
+    '点地面＝走路；按住拖＝拖镜头；滚轮/双指＝缩放',
+    '「TA」＝同伴状态面板：血量 / 体力 / 金币 / 背包',
+    '「个人」＝等级 / 成就 / 装备 / 技能 / 图鉴；「背包」＝你自己的东西',
+    '「地图」＝全图，点哪儿走哪儿；「聊天」＝跟 TA 说话的小窗',
+    '聊天窗：拖标题栏移动；在消息区上下滑只滚消息，不会把框拖走',
+    '思考链只显示一行「▸ Thought process」，点一下才展开全文'
+  ]},
+  { t:'同伴 TA 能干什么', lines:[
+    '它会自己走、会在原地等你、也会冒一句气泡',
+    '★ 你不喊它就不跟：进农场、进屋、下矿，它都留在原来的场景',
+    '喊「过来」它才穿场景过来（come）；「别乱走」＝ stop',
+    '去别处：说「去农场」「回镇上」「下矿洞」「去沙滩」，它自己寻路',
+    '农场活它都能干：锄地、种、浇水、施肥、收 —— 会走过去一格格干，别催它',
+    '矿洞里能敲矿、打怪、坐电梯；它会被离它最近的怪打',
+    '它会自己买东西（种子/肥料/药水）和卖东西（作物），花自己的钱',
+    '它有自己的背包：买来的、收来的、钓来的、挖来的都在它包里',
+    '它说"要做"的事一定会真的去做；做不到会照实说，不会假装干了',
+    '★ 它也会打怪：喊它「打怪」它会自己走过去挥剑（拿木剑，铁匠铺能换铜剑/银剑）',
+    '★ 它自己也能穿鞋戴戒指：铁匠铺有皮靴/铁靴（减伤）、守护/战士/幸运戒指（都花它自己的钱）',
+    '★ 它还能自己钓鱼：喊「去钓鱼」，绿条自动控，鱼进它背包（幸运戒指让绿条涨更快）',
+    '★ 它也会挖矿：喊它「敲矿」它走过去一锤一锤敲，矿石进它自己的背包',
+    '★ 它还会自己出门：买种子/肥料去杂货店、买剑去铁匠铺、稀有种子去沙漠，路它自己走',
+    '★ 它累了能自己去诊所挂号（花它自己的钱回满血），也能问它「你在哪」'
+  ]},
+  { t:'TA 的血 / 体力 / 金 / 背包', lines:[
+    '血量 100：矿洞里怪会打离它最近的人，让它站在前面就会掉血',
+    '血到 0 会「被打倒」（站着不动），睡一觉就恢复',
+    '体力 120：它干的每一样活都扣自己的体力，不动你的',
+    '体力见底它会先吃（厨房有菜才吃得上）或睡觉；都没就罢工',
+    '金币 500 起（和你一样）：它自己买卖，钱进它自己的钱包',
+    '背包分类：消耗品（肥料/鱼饵/药水）/ 种子 / 作物 / 矿石 / 鱼 / 蛋奶 / 料理 / 加工品',
+    '它种的菜长在农场（地是共用的），但收成进它自己的包',
+    '你的种子它用不了，它的种子你也用不了 —— 两套完全分开',
+    '出货箱是你的：让 TA 卖东西要走「卖」命令，不出货箱'
+  ]},
+  { t:'跟 TA 说话的几种说法', lines:[
+    '「过来 / 你来我这边」→ 它走到你身边（跨场景也会来）',
+    '「去农场 / 回镇上 / 下矿洞 / 去沙滩」→ 它自己走过去',
+    '「锄三格地 / 种草莓 / 浇一下水」→ 农场活（会先看它包里有没有种子）',
+    '「买 5 颗草莓种子 / 把草莓卖了」→ 花它的钱、卖它的货',
+    '「今天还剩多少体力？」→ 它报自己的血 / 体力 / 金 / 背包',
+    '「别乱走，就在这等我」→ stop',
+    '「你在哪？」→ 它说自己在哪个场景、要不要 come',
+    '数量说清楚最好：「买 3 颗」「卖 2 个」',
+    '一句里别塞太多事：它一次只做一件，做完再下一句'
   ]},
   { t:'赚钱效率（金/体力）', lines:[
     '秘密森林 硬木：24（每天 3 次，5 体力/次）',
@@ -5363,13 +6340,16 @@ const GUIDE = [
     '结论：前期种地+钓鱼，中期加工+养殖，后期深层矿洞+姜岛'
   ]},
   { t:'种地要点', lines:[
-    '22 种作物按季种植，换季时非当季作物会枯死',
+    '★ 作物 4~13 天熟（芜菁 4 / 草莓 8 / 南瓜 12 / 星之果 13），没浇水当天不长',
+    '换季时非当季作物会枯死 —— 每季 28 天，第 27 天前收干净',
     '每格每天净收益：菠萝 66.7 ＞ 星之果 42.3 ＞ 彩虹果 28 ＞ 南瓜 22.5 ＞ 草莓 12.5',
     '菠萝只要 300 金种子、全季可种（姜岛农场买）',
     '浇水扣体力：水壶初始 20 格，铁匠铺可扩容 30/40/50',
     '肥料：基础 +1 产量；高级 +1 且 35% 概率多长一天',
     '洒水器：铜锭×2，夜里自动浇周围 8 格 —— 越早做越省',
-    '稻草人：小麦×5，防乌鸦（每晚 12% 概率来吃一株）'
+    '稻草人：小麦×5，防乌鸦（每晚 12% 概率来吃一株）',
+    '下雨天地是自动浇过的，第二天可以省一遍水',
+    '施肥的地多收 1 个，所以贵作物优先施肥'
   ]},
   { t:'挖矿与战斗', lines:[
     '矿洞 8 层，越深矿越好：第 8 层几乎全金矿',
@@ -5378,21 +6358,28 @@ const GUIDE = [
     '木剑打 8 层怪要 13 下（必死）；铜剑 7 下；银剑只要 4 下',
     '装备：铜剑 300 / 银剑 1200 / 皮靴 400（-25%）/ 铁靴 1200（-45%）',
     '戒指：守护 1000（再 -15%）、战士 1200（攻 +30%）、幸运 1500（挖矿钓鱼 +20%）',
-    '血尽会被送进诊所躺 3 天 + 医疗费现金的 12% —— 进深层前先买鞋'
+    '血尽会被送进诊所躺 3 天 + 医疗费现金的 12% —— 进深层前先买鞋',
+    '怪会先打离它最近的人：想让 TA 顶前面，就先给它把血补满',
+    'TA 也能打：喊「打怪」，它自己走过去挥剑；它的木剑能打 8，铁匠铺买铜剑换 15',
+    '电梯只停在去过的层；下矿前先看一眼「已到过第几层」'
   ]},
   { t:'钓鱼', lines:[
     '绿条要追上鱼：竹竿 27% / 玻璃纤维竿 800 金 34% / 铱竿 2500 金 41%',
-    '鱼饵 150 金 5 个，每次钓鱼自动用 1 个，绿条 +35%（和竿子叠加）',
+    '鱼饵 150 金 5 个，每次自动用 1 个，绿条 +35%（和竿子叠加）',
     '普通水域 5 种鱼（35~260 金），鱿鱼不好钓但值钱',
     '姜岛热带海滩另有 4 种：312~960 金，但要 40 体力一次',
-    '码头可以现卖鱼，不用等睡觉结算'
+    '码头可以现卖鱼，不用等睡觉结算',
+    '雨天鱼更活跃（鲶鱼只在雨天出）',
+    '钓鱼也吃天气与时段：有些鱼只在 6:00~19:00 或特定季节出',
+    'AI 也能钓鱼：让它「去钓鱼」，绿条由它控'
   ]},
   { t:'养殖', lines:[
     '鸡 300 金（蛋 80/天）· 鸭 350 金（鸭蛋 105/天）· 牛 900 金（牛奶 220/2天）',
-    '每只动物每天吃 1 份饲料（30 金），不够吃就全体停产',
+    '每只动物每天吃 1 份饲料（30 金），不够吃就全体停产 —— 先补饲料',
     '净收益：鸡 50/天、鸭 75/天、牛 80/天；回本分别 6 / 5 / 12 天',
     '蛋奶走铁路最贵（旅客 160%）：鸡蛋 80、鸭蛋 105、牛奶 220',
-    '加工更划算：牛奶 → 奶酪 300（2.14 倍）'
+    '加工更划算：牛奶 → 奶酪 300（2.14 倍）',
+    '动物都在牧场场景里，去牧场能看到它们和产出'
   ]},
   { t:'加工与料理', lines:[
     '铜锭/银锭/金锭：3 矿 → 1 锭，卖价高 33%',
@@ -5400,7 +6387,9 @@ const GUIDE = [
     '面粉：3 麦 → 130（做面包的料）',
     '洒水器＝铜锭×2 · 稻草人＝小麦×5 · 戒指＝金锭1+银锭2',
     '料理回体力：沙拉 70 / 蛋包饭 100 / 南瓜派 120 / 丰盛晚餐 180',
-    '房子升到 Lv2 解锁果酒、海鲜浓汤；Lv3 解锁丰盛晚餐'
+    '房子升到 Lv2 解锁果酒、海鲜浓汤；Lv3 解锁丰盛晚餐',
+    '加工要时间：放进去之后去干别的，回来再取',
+    '加工品不吃行情/节日——别指望倒卖，按基准价走'
   ]},
   { t:'卖货与行情', lines:[
     '出货箱 100%（过夜结算）· 杂货店 95%（立刻）',
@@ -5409,14 +6398,47 @@ const GUIDE = [
     '每季第 13 天节日集市全场 ×1.35，攒货等这天',
     '镇中心委托板 1.6 倍溢价，值得专门凑',
     '社区中心集齐 9 个收集包 → 永久卖价 +5%',
-    '注意：加工品不吃行情/节日，别指望倒卖——出货箱按基准价收'
+    '注意：加工品不吃行情/节日，别指望倒卖——出货箱按基准价收',
+    '急着用钱就现卖（95%），不急就扔出货箱过夜（100%）',
+    '行情每天早上刷新，卖大货前先翻一眼行情'
+  ]},
+  { t:'背包、出货箱与钱', lines:[
+    '你的包：种子/作物/矿石/鱼/蛋奶/料理/加工品/肥料/鱼饵/放置物/动物',
+    '出货箱：放进去 → 睡一觉 → 第二天早上按 100% 到账',
+    '杂货店：卖价 95% 立刻到账；也在这里买种子/肥料/鱼饵',
+    '铁匠铺收矿 120%；铁路旅客收蛋奶 160%；码头收鱼 100%',
+    'TA 有自己的包和钱包，跟你完全分开（点右侧「TA」能看）',
+    'TA 买的东西进它的包，它收的作物也进它的包；你收的进你的',
+    '背包不会满，但东西多了翻起来麻烦 —— 定期出货',
+    '钱分为你和 TA 两个钱包：它买东西不会花你的钱'
   ]},
   { t:'三页地图怎么用', lines:[
     '第一页 · 鹈鹕镇周边：镇上、杂货店、铁匠铺、矿洞、沙滩、铁路、牧场、沙漠、法师塔',
     '第二页 · 谷外荒野：采石场（8 体力敲矿）、秘密森林（每天 3 次硬木）、骷髅洞穴（深层怪）、博物馆（捐 5 件得 3000 金）、赌场（45% 翻倍）',
     '第三页 · 姜岛：火山（怪血 80）、岛农场（菠萝全季）、度假村（500 金过夜）、热带海滩（每天 3 次稀有鱼）、核桃林（每天 1 个核桃）',
     '顶部按钮循环翻页；每页各自记住站位，进出场景也不会串页',
-    '每一页走到地点旁边就会出现对应按钮，不用找入口'
+    '每一页走到地点旁边就会出现对应按钮，不用找入口',
+    '靠近边缘的传送点会显示「下一页 ▸」，别在边界乱点',
+    '从场景里出来会回到你进去时那一页的入口'
+  ]},
+  { t:'季节、天气与节日', lines:[
+    '一季 28 天，四个季节循环：春 → 夏 → 秋 → 冬',
+    '换季那一晚会把非当季作物枯死 —— 第 27 天前收干净',
+    '雨天等于自动浇一次水，第二天可以不动水壶',
+    '冬天会下雪；非冬天的「雪」会被修正成晴',
+    '每季第 13 天是节日集市，全场卖价 ×1.35 —— 攒货等这天',
+    '每晚 12% 概率乌鸦来吃一株，田大了记得放稻草人',
+    '天气还会影响钓鱼（有些鱼只在雨天出）'
+  ]},
+  { t:'技能与职业', lines:[
+    '5 个技能：种田 / 挖矿 / 采集 / 钓鱼 / 战斗，各最高 10 级',
+    '每级：对应工具耗能 −0.1 · 钓鱼绿条 +1.5% · 战斗 +5 血上限',
+    '5 级和 10 级各二选一（在「个人 → 技能」里选）',
+    '种田：农耕者（作物 +10%）/ 牧场主（动物产品 +20%）',
+    '挖矿：矿工（每脉 +1 个）/ 地质学家（25% 双倍）',
+    '采集：森林人（硬木 50% +1）/ 采集者（硬木 +20%）',
+    '钓鱼：渔夫（鱼 +25%）/ 捕鱼者（绿条 +10%）',
+    '战斗：战士（攻 +10% · 血 +15）/ 侦察兵（20% 双倍伤害）'
   ]},
   { t:'常见坑', lines:[
     '换季前把非当季作物收掉，不然全枯',
@@ -5424,7 +6446,11 @@ const GUIDE = [
     '体力见底：自己做饭吃比买 90 金药水划算',
     '乌鸦每晚 12% 概率吃一株，田大了记得放稻草人',
     '行情低谷别急着卖矿，等涨了再挖',
-    '出货箱是过夜结算，急用钱去杂货店/铁匠铺/铁路'
+    '出货箱是过夜结算，急用钱去杂货店/铁匠铺/铁路',
+    '让 TA 干活前先看它的体力：见底它会拒绝，先让它吃或睡',
+    'TA 的种子在它自己包里 —— 你买的种子它用不了',
+    '没浇水的地当天不长，别以为「种下去就会自己长」',
+    '你替 TA 收它种的地也行，收成会进你的包'
   ]}
 ];
 function openGuide(page){
@@ -6441,6 +7467,8 @@ function openFishing(){
   FI.on = true; FI.done = false;
   FI.gy = 0.55; FI.vy = 0; FI.fy = 0.30; FI.fdir = 1; FI.ft = 0;
   FI.prog = 0.40; FI.hold = false; FI.t = 0;
+  /* ★ 6.07：记下这竿是谁下的 —— AI 的竿由程序自己控绿条，幸运也用 TA 的戒指 */
+  FI.owner = (typeof _costActor !== 'undefined' && _costActor === 'TA') ? 'TA' : 'P';
   if((GAME.bait||0) > 0){ GAME.bait--; FI.boost = true; } else { FI.boost = false; }
   fiEl.classList.add('on');
   sfx.cast();
@@ -6462,6 +7490,11 @@ function refreshFishing(){
 function updateFishing(dt){
   if(!FI.on || FI.done) return;
   FI.t += dt;
+  /* ★ 6.07：AI 的竿 —— 自动追鱼（以前说"绿条交给 AI 控"，其实没人控，鱼必定跑掉） */
+  if(FI.owner === 'TA'){
+    const hh0 = greenHalf();
+    FI.hold = (FI.fy < FI.gy - hh0 * 0.05);
+  }
   /* 绿框：按住上升、松开下落，带一点惯性 */
   FI.vy += (FI.hold ? -3.2 : 2.8) * dt;
   FI.vy = Math.max(-1.9, Math.min(1.9, FI.vy));
@@ -6477,7 +7510,8 @@ function updateFishing(dt){
   if(FI.fy > 0.94){ FI.fy = 0.94; FI.fdir = -1; }
   /* 判定 */
   const inGreen = Math.abs(FI.fy - FI.gy) < greenHalf();
-  FI.prog = Math.max(0, Math.min(1, FI.prog + (inGreen ? 0.62 * (1 + luckBonus()) : -0.18) * dt));
+  const _luck = (FI.owner === 'TA') ? taLuckBonus() : luckBonus();
+  FI.prog = Math.max(0, Math.min(1, FI.prog + (inGreen ? 0.62 * (1 + _luck) : -0.18) * dt));
   if(FI.prog >= 1){ fishWin(); return; }
   if(FI.prog <= 0 || FI.t > 30){ fishLose(); return; }
   refreshFishing();
@@ -6485,14 +7519,21 @@ function updateFishing(dt){
 function fishWin(){
   FI.done = true;
   const f = rollFish();
-  GAME.fish[f.id] = (GAME.fish[f.id] || 0) + 1;
+  /* ★ 6.07：钓鱼结算在游戏循环里，_costActor 已经是空的 —— 用 FI.owner 判断是谁的竿 */
+  const _byTA = (typeof FI !== 'undefined' && FI && FI.owner === 'TA');
+  if(_byTA) taBagAdd('fish', f.id, 1);
+  else GAME.fish[f.id] = (GAME.fish[f.id] || 0) + 1;
   if(PM.fishGold()){ GAME.gold = (GAME.gold||0) + PM.fishGold(); }
-  see('fish', f.id);
-  addSkillXp('fish', 12);
+  if(!_byTA){
+    /* ★ 6.11：TA 钓到的鱼不给玩家加图鉴/技能/经验/统计（以前这些全算在玩家头上） */
+    see('fish', f.id);
+    addSkillXp('fish', 12);
+    GAME.stat.fished = (GAME.stat.fished||0) + 1;
+    addXp(15);
+  }
   try{ SV.emit('fish', { name:f.name, sell:f.sell }); }catch(e){}
-  GAME.stat.fished = (GAME.stat.fished||0) + 1;
-  addXp(15);
-  GAME.bin.qty++; GAME.bin.value += f.sell;
+  /* ★ 6.10：TA 钓的鱼只进它自己的背包，别再记进玩家的出货箱（K14） */
+  if(!_byTA){ GAME.bin.qty++; GAME.bin.value += f.sell; }
   closeFishing();
   sfx.catchFish();
   showFx('钓到了！' + f.name, 'good', 1500);
@@ -6550,6 +7591,85 @@ document.getElementById('qEquip').onclick = ()=>{ closeMe(); openEquip(); };
 document.getElementById('qSkill').onclick = ()=>{ closeMe(); openSkills(); };
 document.getElementById('qCodex').onclick = ()=>{ closeMe(); openCodex(); };
 meEl.addEventListener('click', e=>{ if(e.target === meEl) closeMe(); });
+/* ★ 5.94：TA 状态面板 —— 血量 / 体力 / 金币，AI 也能通过 state 看到同一份数据 */
+const taEl = document.getElementById('ta');
+function taSceneWord(){
+  try{
+    if(TA.away) return '在' + taSceneLabel(TA.scene) + '（喊它过来才来）';
+    if(TA.down) return '被打倒了，睡一觉就恢复';
+    return '跟着你（' + (scene === 'farm' ? '农场' : (scene === 'sub' && curScene ? curScene.name : '镇上')) + '）';
+  }catch(e){ return '—'; }
+}
+function renderTA(){
+  const hp = Math.max(0, Math.round(TA.hp)), hpm = Math.max(1, Math.round(TA.maxHp));
+  const en = Math.max(0, Math.round(TA.energy)), enm = Math.max(1, Math.round(TA.maxEnergy));
+  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  const bar=(id,p)=>{ const el=document.getElementById(id); if(el) el.style.width=Math.max(0,Math.min(100,p))+'%'; };
+  set('taName','TA'); set('taWhere', taSceneWord());
+  set('taHpTxt', hp+'/'+hpm); set('taEnTxt', en+'/'+enm); set('taGoldTxt', (TA.gold|0)+' 金');
+  set('taWeapTxt', taWeapon().name + '（' + taWeapon().dmg + '）');
+  set('taBootTxt', taBoot().name + (taArmorPct() > 0 ? '（减伤 ' + Math.round(taArmorPct()*100) + '%）' : ''));
+  set('taRingTxt', (taRingDef() ? taRingDef().name : '没戴'));
+  set('taKillTxt', '击杀 ' + (TA.kills|0));
+  bar('taHpBar', hp/hpm*100); bar('taEnBar', en/enm*100);
+  /* ★ 5.98：把 TA 的背包分组画出来（和玩家背包同一套分类） */
+  try{
+    const bagEl2 = document.getElementById('taBag');
+    if(bagEl2){
+      const g = function(title, rows){
+        if(!rows.length) return '';
+        return '<div class="ta-bg-grp"><div class="ta-bg-t">' + title + '</div>' +
+          rows.map(function(r){ return '<div class="ta-bg-r"><span>' + r[0] + '</span><b>×' + r[1] + '</b></div>'; }).join('') +
+          '</div>';
+      };
+      const B = TA.bag || {};
+      const seedRows = Object.keys(B.seeds||{}).filter(k=>(B.seeds[k]||0)>0)
+        .map(k=>[((CROPS[k]&&CROPS[k].name)||k)+'种子', B.seeds[k]]);
+      const cropRows = Object.keys(B.crops||{}).filter(k=>(B.crops[k]||0)>0)
+        .map(k=>[(CROPS[k]&&CROPS[k].name)||k, B.crops[k]]);
+      const oreRows = Object.keys(B.ores||{}).filter(k=>(B.ores[k]||0)>0)
+        .map(k=>[(ORES[k]&&ORES[k].name)||k, B.ores[k]]);
+      const fishRows = Object.keys(B.fish||{}).filter(k=>(B.fish[k]||0)>0)
+        .map(k=>{ const f=FISH_TBL.filter(x=>x.id===k)[0]; return [f?f.name:k, B.fish[k]]; });
+      const goodRows = Object.keys(B.goods||{}).filter(k=>(B.goods[k]||0)>0)
+        .map(k=>[(GOODS[k]&&GOODS[k].name)||k, B.goods[k]]);
+      const foodRows = Object.keys(B.food||{}).filter(k=>(B.food[k]||0)>0)
+        .map(k=>[(RECIPES[k]&&RECIPES[k].name)||k, B.food[k]]);
+      const craftRows = Object.keys(B.crafted||{}).filter(k=>(B.crafted[k]||0)>0)
+        .map(k=>[(CRAFTED[k]&&CRAFTED[k].name)||k, B.crafted[k]]);
+      const useRows = [];
+      if(B.fert && B.fert.basic > 0) useRows.push(['基础肥料', B.fert.basic]);
+      if(B.fert && B.fert.premium > 0) useRows.push(['高级肥料', B.fert.premium]);
+      if((B.bait||0) > 0) useRows.push(['鱼饵', B.bait]);
+      const html = g('消耗品', useRows) + g('种子', seedRows) + g('作物', cropRows) +
+                   g('矿石', oreRows) + g('鱼', fishRows) + g('蛋奶', goodRows) +
+                   g('料理', foodRows) + g('加工品', craftRows);
+      bagEl2.innerHTML = html || '<div class="ta-bg-empty">TA 的背包是空的（让它 buy 买种子，或 harvest 收作物）</div>';
+    }
+  }catch(e){}
+  const note = document.getElementById('taNote');
+  if(note){
+    note.textContent = TA.down ? 'TA 倒下了：睡一觉（或按「睡觉」）就恢复满。'
+      : (TA.job ? ('正在' + (TA.job.label||'干活') + '：' + TA.job.i + '/' + TA.job.items.length + ' 格（走过去一格格干）')
+      : (en <= 0 ? 'TA 体力见底了，让它吃点东西或睡一觉。'
+      : 'TA 干活花的是它自己的体力；它自己买卖东西花的是它自己的金币。'));
+  }
+}
+function openTA(){ renderTA(); taEl.classList.add('on'); sfx.open(); }
+/* ★ 6.04：面板上的「给 TA 100 金」 */
+try{
+  const _gb = document.getElementById('taGiveBtn');
+  if(_gb) _gb.addEventListener('click', function(e){
+    e.preventDefault(); e.stopPropagation();
+    const r = giveToTA(100);
+    try{ toast(r.msg); }catch(x){}
+    try{ renderTA(); }catch(x){}
+  });
+}catch(e){}
+function closeTA(){ taEl.classList.remove('on'); sfx.close(); }
+document.getElementById('taBtn').onclick = openTA;
+document.getElementById('taClose').onclick = closeTA;
+taEl.addEventListener('click', e=>{ if(e.target === taEl) closeTA(); });
 document.getElementById('hud').style.cursor = 'pointer';
 document.getElementById('hud').onclick = openMe;
 
@@ -6659,6 +7779,9 @@ function saveGame(){
       mkt:GAME.mkt, festivalDone:GAME.festivalDone,
       fert:GAME.fert, bait:GAME.bait, bootLv:GAME.bootLv, travel:GAME.travel,
       rings:GAME.rings, ring:GAME.ring,
+      /* ★ 5.94：TA 的状态也存 */
+      ta:{hp:TA.hp, energy:TA.energy, gold:TA.gold, bag:TA.bag,
+          weaponLv:TA.weaponLv|0, bootLv:TA.bootLv|0, ring:TA.ring||null, kills:TA.kills|0},
       traderSpot:GAME.traderSpot, traderStock:GAME.traderStock,
       ach:GAME.ach, ct:GAME.ct, seen:GAME.seen,
       bundles:GAME.bundles, centerGiftDay:GAME.centerGiftDay,
@@ -6673,9 +7796,12 @@ function saveGame(){
       scene: (scene === 'sub' ? 'world' : scene),
       px: Math.round(scene === 'sub' && curScene ? curScene.exitAt.back.x : P.x),
       py: Math.round(scene === 'sub' && curScene ? curScene.exitAt.back.y : P.y),
-      farms: farms.map(f=>f.map(p=>[p.tilled?1:0, p.watered?1:0, p.crop?1:0, Math.round(p.stage)]))
+      /* ★ 6.09：以前只存「有没有作物」(1/0)，读档一律变回草莓 ——
+         现在存作物 key（老存档的数字 1 仍然兼容）。 */
+      farms: farms.map(f=>f.map(p=>[p.tilled?1:0, p.watered?1:0, p.crop||'', Math.round(p.stage)]))
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(d));
+    try{ mirrorGold(); }catch(e){}      /* ★ 6.03：金币镜像给家园小铺 */
     flashSaved();
     return true;
   }catch(e){ return false; }
@@ -6702,7 +7828,7 @@ function sanitizeSave(){
   else GAME.crafts = [];
   if(GAME.quest && !(CROPS[GAME.quest.key] || ORES[GAME.quest.key] ||
                      GOODS[GAME.quest.key] || CRAFTED[GAME.quest.key])) GAME.quest = null;
-  if(!Number.isFinite(GAME.gold) || GAME.gold < 0) GAME.gold = 50;
+  if(!Number.isFinite(GAME.gold) || GAME.gold < 0) GAME.gold = 500;   /* ★ 6.03 */
   if(!Number.isFinite(GAME.level) || GAME.level < 1) GAME.level = 1;
   if(!Number.isFinite(GAME.xp) || GAME.xp < 0) GAME.xp = 0;
   if(!Number.isFinite(GAME.feed) || GAME.feed < 0) GAME.feed = 0;
@@ -6781,7 +7907,9 @@ function loadGame(){
         r: Math.floor(i / FARM.plot.cols),
         c: i % FARM.plot.cols,
         tilled: !!a[0], watered: !!a[1],
-        crop: a[2] ? 'strawberry' : null, stage: a[3] || 0
+        /* ★ 6.09：读回真实作物（老存档存的是数字 1 → 草莓） */
+        crop: (typeof a[2] === 'string' && CROPS[a[2]]) ? a[2] : (a[2] === 1 || a[2] === true ? 'strawberry' : null),
+        stage: a[3] || 0
       })));
     }
     weather = d.weather || '晴';
@@ -6797,6 +7925,37 @@ function loadGame(){
     } else {
       P.x = d.px; P.y = d.py; P.path = null;
     }
+    /* ★ 5.94：恢复 TA 的血量 / 体力 / 金币 */
+    try{
+      const t = d.ta || {};
+      TA.maxHp = 100; TA.maxEnergy = 120;
+      TA.hp = Math.max(0, Math.min(TA.maxHp, (t.hp == null ? TA.maxHp : t.hp|0)));
+      TA.energy = Math.max(0, Math.min(TA.maxEnergy, (t.energy == null ? TA.maxEnergy : t.energy|0)));
+      TA.gold = Math.max(0, t.gold|0);
+      if(t.weaponLv != null) TA.weaponLv = Math.max(0, t.weaponLv|0);
+      if(t.bootLv != null) TA.bootLv = Math.max(0, t.bootLv|0);
+      TA.ring = t.ring || null;
+      if(t.kills != null) TA.kills = Math.max(0, t.kills|0);
+      if(t.bag && typeof t.bag === 'object'){
+        const base = { seeds:{}, crops:{}, ores:{}, fish:{}, goods:{}, food:{}, crafted:{}, fert:{basic:0,premium:0}, bait:0 };
+        for(const k in base){
+          if(t.bag[k] && typeof t.bag[k] === 'object') base[k] = Object.assign(base[k], t.bag[k]);
+          else if(typeof t.bag[k] === 'number') base[k] = t.bag[k]|0;
+        }
+        TA.bag = base;
+      }
+      TA.down = TA.hp <= 0;
+    }catch(e){}
+    /* ★ 6.03：家园小铺花过钱就以它为准；老存档一次性补到 500 */
+    try{ syncGoldFromHome(); }catch(e){}
+    try{
+      if(!localStorage.getItem('te_gold500')){
+        if((GAME.gold|0) < 500) GAME.gold = 500;
+        if((TA.gold|0) < 500) TA.gold = 500;
+        localStorage.setItem('te_gold500', '1');
+      }
+    }catch(e){}
+    try{ mirrorGold(); }catch(e){}
     return true;
   }catch(e){ return false; }
 }
@@ -6864,7 +8023,8 @@ function aiReply(text){
     TA_API.wherever(); TA_API.say('来了');
     return '来了。';
   }
-  if(/^(停|停一下|等|等我|别走|站住)/.test(t)){
+  /* ★ 6.10：「别乱走 / 别走开 / 待着」也要能停下（以前本地兜底漏了这几个说法） */
+  if(/^(停|停一下|等|等我|别走|别乱走|别走开|站住|站那|待着|待在这儿)/.test(t)){
     TA_API.stop(); TA_API.say('好');
     return '好，我停这儿了。';
   }
@@ -6950,19 +8110,45 @@ function addChat(who, text, reasoning){
 function addThink(text){
   var t = String(text || '').trim();
   if(!t) return null;
-  var el = document.createElement('div');
-  el.className = 'msg ai te-think';
-  el.style.cssText = 'opacity:.9;font-size:11px;line-height:1.5;color:#8a6a76;background:rgba(255,240,246,.72);'
-    + 'border-left:2px solid rgba(226,182,197,.9);border-radius:0 8px 8px 0;padding:6px 9px;'
-    + 'white-space:pre-wrap;max-height:58px;overflow:hidden;cursor:pointer;align-self:flex-start;max-width:88%';
-  el.textContent = '思考 · ' + t;
-  el.title = '点一下展开/收起';
-  el.addEventListener('click', function(){
-    el.style.maxHeight = (el.style.maxHeight === 'none') ? '58px' : 'none';
+  /* ★ 5.92：改成和聊天页一样的「Thought process」思考链：
+     默认只露一行小字（点一下就展开全文），不再用一个 58px 高的框把最后一行拦腰截断。
+     展开后的正文自己带滚动，长思考也不会把窗口撑爆。 */
+  var wrap = document.createElement('div');
+  wrap.className = 'te-think-wrap';
+  wrap.style.cssText = 'align-self:flex-start;max-width:88%;margin:1px 0 1px 2px;display:flex;'
+    + 'flex-direction:column;align-items:flex-start;gap:4px';
+
+  var tg = document.createElement('div');
+  tg.style.cssText = 'display:inline-flex;align-items:center;gap:5px;cursor:pointer;'
+    + 'font:italic 12px/1.25 Georgia,"Songti SC",serif;color:#b2567a;letter-spacing:.4px;'
+    + 'padding:2px 2px;user-select:none';
+  var caret = document.createElement('i');
+  caret.textContent = '▸';
+  caret.style.cssText = 'font-style:normal;font-size:10px;color:#c98aa4';
+  var lab = document.createElement('span');
+  lab.textContent = 'Thought process';
+  tg.appendChild(caret); tg.appendChild(lab);
+
+  var body = document.createElement('div');
+  body.textContent = t;
+  body.style.cssText = 'display:none;margin:0;padding:8px 10px;background:rgba(255,255,255,.62);'
+    + 'border:1.5px solid rgba(236,192,210,.9);border-radius:6px;font-size:11px;line-height:1.7;'
+    + 'color:#8a6a76;white-space:pre-wrap;word-break:break-word;max-height:34vh;overflow-y:auto;'
+    + 'box-shadow:2px 2px 0 rgba(120,70,96,.06)';
+
+  var open = false;
+  tg.addEventListener('click', function(){
+    open = !open;
+    body.style.display = open ? 'block' : 'none';
+    caret.textContent = open ? '▾' : '▸';
+    if(open){ try{ chatBody.scrollTop = chatBody.scrollHeight; }catch(e){} }
   });
-  chatBody.appendChild(el);
+
+  wrap.appendChild(tg);
+  wrap.appendChild(body);
+  chatBody.appendChild(wrap);
   chatBody.scrollTop = chatBody.scrollHeight;
-  return el;
+  return wrap;
 }
 /* 聊天窗里的临时状态条：只在本地显示，不进聊天记录 */
 function addStatus(text){
@@ -7025,7 +8211,9 @@ document.getElementById('chatSend').onclick = sendChatAI;
    游戏这边再写一遍就会和 App 那条撞成两条「进入星露谷」——用户截图里那一屏重复
    就是这么来的。这里彻底不写了；syncScene() 保留给别处用。 */
 chatInput.addEventListener('keydown', e=>{
-  if(e.key === 'Enter'){ e.preventDefault(); sendChat(); }
+  /* ★ 6.12：回车和「发送」按钮走同一条路（AI）—— 以前回车落到本地关键词兜底，
+     软键盘按回车时「过来/买铜剑」根本不进模型。sendChatAI 里已经有没连上时的兜底。 */
+  if(e.key === 'Enter'){ e.preventDefault(); sendChatAI(); }
 });
 document.getElementById('chatClose').onclick = ()=>{
   chatWin.classList.add('hide'); chatOpenBtn.style.display = 'block';
@@ -7143,7 +8331,16 @@ try{
     if(!drag) return;
     const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
     if(!drag.moved){
-      if(Math.abs(dx) < TH && Math.abs(dy) < TH) return;
+      if(Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+      /* ★ 5.91：消息区/输入行起手、且以竖向为主 → 放弃拖动，把这一下让给 #chatBody 滚动。
+         横向为主才拖窗口（标题栏起手则任意方向都能拖）。
+         ★ 6.13：阈值 1.15 改成 1.0 —— 斜着往上划（dx≈dy）以前会被判成拖窗，
+         结果消息没滚动、框却跟着跑。现在只要竖的分量不输横的就让给滚动。 */
+      if(drag.fromBody && Math.abs(dy) >= Math.abs(dx)){
+        drag = null; off();
+        try{ el.classList.remove('dragging'); }catch(_){}
+        return;
+      }
       drag.moved = true;
       el.classList.add('dragging');
       try{ el.style.transition = 'none'; }catch(_){}
@@ -7176,12 +8373,23 @@ try{
   }
   el.addEventListener('pointerdown', function(e){
     if(e.button != null && e.button !== 0) return;
-    if(e.target.closest('#chatBody, #chatInputRow, button, input, textarea, select')) return;
+    /* ★ 5.78（用户口径：星露谷聊天框内**任意一个地方**都能自由拖动）
+       以前这里把 #chatBody / #chatInputRow 整个排除掉，所以只有标题栏能拖。
+       现在只排除真正的控件（按钮/输入框），消息区也允许起手；
+       方向由第一次移动判定：横向 → 拖窗口，纵向 → 让给消息区自己滚。 */
+    if(e.target.closest('button, input, textarea, select')) return;
+    /* ★ 5.79：用户要求"框内任意一个地方自由移动"。
+       上一版还留着"纵向让给滚动"，结果在 WebView 里一滚动浏览器就发 pointercancel，
+       拖动被掐掉 —— 表现就是"只有四角能拖"。
+       现在整框接管：只要不是按钮/输入框，按下就进入拖动，任何方向都算。 */
+    const fromBody = !!e.target.closest('#chatBody, #chatInputRow');
+    /* ★ 5.91：这里以前对消息区起手的按下 preventDefault，会把后面的原生滚动一起掐掉。
+       现在不掐：方向由第一次移动判定（见 onMove）。 */
     const r = el.getBoundingClientRect();
     drag = { sx:e.clientX, sy:e.clientY, left:r.left, top:r.top,
              dx:e.clientX-r.left, dy:e.clientY-r.top,
              w:r.width||sizeOf().w, h:r.height||sizeOf().h,
-             moved:false, id:e.pointerId };
+             moved:false, id:e.pointerId, fromBody:fromBody, axisLock:'' };
     try{ el.setPointerCapture(e.pointerId); }catch(_){}
     document.addEventListener('pointermove', onMove, true);
     document.addEventListener('pointerup', onUp, true);
@@ -7326,6 +8534,17 @@ addEventListener('resize', ()=>{ if(BM.open) drawBigMap(); });
     rot.classList.toggle('on', portrait && !skipped());
   }
   document.getElementById('rotGo').onclick = async ()=>{
+    /* 2026-10-31：在 Ever 里打开时，全屏和方向锁交给外壳做 ——
+       游戏自己 requestFullscreen 会把"游戏 iframe"顶到全屏，
+       外壳右上角的「‹ 返回」就不见了（用户："返回键看不到"）。 */
+    try{
+      if(window.parent && window.parent !== window && window.parent.__svLockLandscape){
+        window.parent.__svLockLandscape();
+        toast('已锁定横屏');
+        setTimeout(check, 400);
+        return;
+      }
+    }catch(_){}
     try{
       if(document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
       if(screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape');
@@ -7349,39 +8568,48 @@ function loadImg(src){
   return new Promise((res)=>{ const im = new Image(); im.onload=()=>res(im); im.onerror=()=>res(null); im.src = src; });
 }
 (async function init(){
-  mapImg = await loadImg(MAP_SRC);
+  /* ★ 第一帧之前先把画布铺成纸色：万一加载卡已经下去了、贴图还没到，
+     用户看到的也是"纸"，不是"黑屏"。 */
+  try{
+    resize();
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.fillStyle = '#f3e9dc';
+    ctx.fillRect(0,0,cv.width,cv.height);
+  }catch(_){}
+  /* 2026-10-31：原来是"一张一张 await"（几十张贴图 = 几十个来回），
+     手机上打开要好几秒，用户看到的就是"黑的，过会才好"。
+     改成一次性并发，加载完还是按原来的位置落进 sprites / seasonImgs / SCENES。 */
+  const JOBS = [];
+  mapImg = await loadImg(MAP_SRC);              /* 农场底图先到，第一帧就能画 */
   worldImg = mapImg;
   POI_1 = POI; ENTRIES_1 = ENTRIES;
-  mapImg2 = await loadImg(PAGE2.art);
-  mapImg3 = await loadImg(PAGE3.art);
+  JOBS.push(loadImg(PAGE2.art).then(im=>{ mapImg2 = im; }));
+  JOBS.push(loadImg(PAGE3.art).then(im=>{ mapImg3 = im; }));
   for(const d of DIRS){
-    sprites[d] = [];
-    for(let i=0;i<4;i++){
-      sprites[d].push(await loadImg(`生图/walk/${d}_${i}.png`));
-    }
+    JOBS.push(Promise.all([0,1,2,3].map(i=>loadImg(`生图/walk/${d}_${i}.png`)))
+      .then(a=>{ sprites[d] = a; }));
+    JOBS.push(Promise.all([0,1,2,3].map(i=>loadImg(`生图/walk_ta/${d}_${i}.png`)))
+      .then(a=>{ taSprites[d] = a; }));
   }
-  for(const d of DIRS){
-    taSprites[d] = [];
-    for(let i=0;i<4;i++){
-      taSprites[d].push(await loadImg(`生图/walk_ta/${d}_${i}.png`));
-    }
-  }
-  for(let i=0;i<SEASON_MAPS.length;i++) seasonImgs[i] = await loadImg(SEASON_MAPS[i].src);
-  farmImg = await loadImg(FARM.src);
-  for(let i=0;i<FARM_SRCS.length;i++) farmImgs[i] = await loadImg(FARM_SRCS[i]);
-  farmImgCur = farmImgs[0];
+  JOBS.push(Promise.all(SEASON_MAPS.map(m=>loadImg(m.src)))
+    .then(a=>{ for(let i=0;i<a.length;i++) seasonImgs[i] = a[i]; }));
+  JOBS.push(loadImg(FARM.src).then(im=>{ farmImg = im; }));
+  JOBS.push(Promise.all(FARM_SRCS.map(s=>loadImg(s)))
+    .then(a=>{ for(let i=0;i<a.length;i++) farmImgs[i] = a[i]; }));
   for(const id in SCENES){
     const sc = SCENES[id];
-    sc.img = await loadImg(sc.art);
+    const base = loadImg(sc.art);
+    JOBS.push(base.then(im=>{ sc.img = im; }));
     if(sc.seasonal){
-      sc.imgs = [sc.img];                       /* 0=春（原图） */
-      for(const s of ['夏','秋','冬']){
-        const p = sc.art.replace(/\.[a-z]+$/i, '') + '-' + s + '.webp';
-        sc.imgs.push(await loadImg(p));         /* 缺图就是 null，会退回原图 */
-      }
+      const others = ['夏','秋','冬'].map(s => sc.art.replace(/\.[a-z]+$/i, '') + '-' + s + '.webp');
+      JOBS.push(Promise.all([base, ...others.map(p=>loadImg(p))])
+        .then(a=>{ sc.imgs = a; }));              /* 0=春（原图），缺图是 null 会退回原图 */
     }
   }
-  GAME.gold = 50; GAME.bin = {qty:0, value:0};
+  await Promise.all(JOBS);
+  farmImgCur = farmImgs[0];
+  GAME.gold = 500; GAME.bin = {qty:0, value:0};   /* ★ 6.03：新游戏起始 500 */
+  try{ mirrorGold(); }catch(e){}                   /* 新档也立刻把钱包写给家园小铺 */
   GAME.seedsBy = {strawberry:10}; GAME.seedSel = 'strawberry';
   loadGame();
   if(!GAME.mkt) rollMarket();          /* 开局也要有行情 */
@@ -7397,16 +8625,25 @@ function loadImg(src){
   if(scene === 'world') mapImg = seasonImgs[GAME.season];   /* 读档进农场时别覆盖农场图 */
   applySeason();
 
-  caps.L = await loadImg('生图/W-气泡capL.png');
-  caps.M = await loadImg('生图/W-气泡capM.png');
-  caps.R = await loadImg('生图/W-气泡capR.png');
+  const _capJobs = await Promise.all([
+    loadImg('生图/W-气泡capL.png'), loadImg('生图/W-气泡capM.png'), loadImg('生图/W-气泡capR.png')
+  ]);
+  caps.L = _capJobs[0]; caps.M = _capJobs[1]; caps.R = _capJobs[2];
   try{
     try{
-    const zi = parseInt(localStorage.getItem('te_zoom') || '1', 10);
-    if(zi >= 0 && zi < ZSTEPS.length){
-      zoomIdx = zi; cam.tz = ZSTEPS[zi];
-      const zb = document.getElementById('zoomBtn'); if(zb) zb.textContent = '⤢ ' + ZSTEPS[zi] + '×';
+    /* 2026-10-31：默认倍率按屏幕大小选。
+       手机上（短边 < 560）1.5× 时人物快占掉整个屏高 —— 用户："里面人物太大"。
+       小屏默认 1×，平板/桌面还是 1.5×；手动切换过的存 te_zoom3，以后听用户的。 */
+    const savedZ = localStorage.getItem('te_zoom3');
+    if(savedZ != null && ZSTEPS[parseInt(savedZ, 10)] != null){
+      zoomIdx = parseInt(savedZ, 10);
+    }else{
+      const _short = Math.min(innerWidth, innerHeight) || 400;
+      zoomIdx = _short < 560 ? 0 : Math.min(1, ZSTEPS.length - 1);
     }
+    cam.tz = ZSTEPS[zoomIdx];
+    try{ localStorage.setItem('te_zoom3', String(zoomIdx)); }catch(_){}
+    const zb0 = document.getElementById('zoomBtn'); if(zb0) zb0.textContent = '⤢ ' + ZSTEPS[zoomIdx] + '×';
   }catch(_){}
   const st = JSON.parse(localStorage.getItem('te_sound') || 'null');
     if(st){ SFX.on = st.on !== false; SFX.music = !!st.music; }
@@ -7422,11 +8659,14 @@ function loadImg(src){
     cam.tz = ZSTEPS[zoomIdx];
     document.getElementById('zoomBtn').textContent = '⤢ ' + ZSTEPS[zoomIdx] + '×';
     toast('画面缩放 ' + ZSTEPS[zoomIdx] + '×', 1200);
-    try{ localStorage.setItem('te_zoom', String(zoomIdx)); }catch(_){}
+    try{ localStorage.setItem('te_zoom3', String(zoomIdx)); }catch(_){}
   };
   document.getElementById('atkBtn').onclick = ()=>{ playerAttack(); };
   refreshSeedChip();
   requestAnimationFrame(loop);
+  /* ★ 注意：这里**不要**猜时间发"就绪"。上一版在这里 setTimeout 2.5s 报就绪，
+     真机加载要 5~10 秒 → 卡片 2.5 秒就没了，剩下全是黑屏（用户："还是会黑屏"）。
+     现在改成 loop() 里真的画出第一帧之后再发（见 loop 末尾）。 */
   window.__game = {P, cam, ENTRIES, walkable, findPath, get debug(){return debug;}};
 })();
 </script>
