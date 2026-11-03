@@ -26174,11 +26174,17 @@ function fetchFor(prefix,type){
   }
   if(!cfg.base){ box.innerHTML='<div class="pick-row err">先填接口地址</div>'; return; }
   box.innerHTML='<div class="pick-row">拉取中…</div>';
+  /* ★ 8.61.2：把失败原因吐出来。以前只写“没拿到列表”，用户看不出是 401（key 错）还是 404（地址错）。 */
   fetch(apiUrl(cfg.base,'/models'),{headers:{'Authorization':'Bearer '+cfg.key}})
-    .then(function(r){return r.json();})
-    .then(function(d){
+    .then(function(r){return r.text().then(function(t){var d=null;try{d=JSON.parse(t);}catch(e){}return {ok:r.ok,st:r.status,d:d};});})
+    .then(function(o){
+      var d=o.d||{};
       var list=((d&&d.data)||[]).map(function(m){return m.id;}).sort();
-      if(!list.length){ box.innerHTML='<div class="pick-row err">没拿到列表</div>'; return; }
+      if(!list.length){
+        var why=(d.error&&(d.error.message||d.error.type||d.error.code))||('HTTP '+o.st+(o.d?'':' · 返回的不是 JSON'));
+        if(!cfg.key) why='先填密钥';
+        box.innerHTML='<div class="pick-row err">没拿到列表：'+apiEsc(String(why))+'</div>'; return;
+      }
       box.innerHTML='<div class="pick-row hint">点一个名字填入</div>'+
         list.slice(0,300).map(function(m){
           return '<div class="pick-row" data-m="'+encodeURIComponent(m)+'" onclick="pickForEl(this,\''+prefix+'\',\''+type+'\')">'+apiEsc(m)+'</div>';
@@ -26704,11 +26710,17 @@ function fetchPresetModels(){
   if(!base){ toast('先填接口地址'); return; }
   el.style.display='block';
   el.innerHTML='<div class="pick-row" style="text-align:center;color:var(--tecT12,#b09888)">拉取中…</div>';
+  /* ★ 8.61.2：同上，失败原因要可见 */
   fetch(apiUrl(base,'/models'),{headers:{'Authorization':'Bearer '+key}})
-    .then(function(r){return r.json();})
-    .then(function(d){
+    .then(function(r){return r.text().then(function(t){var d=null;try{d=JSON.parse(t);}catch(e){}return {ok:r.ok,st:r.status,d:d};});})
+    .then(function(o){
+      var d=o.d||{};
       var list=((d&&d.data)||[]).map(function(m){return m.id;}).sort();
-      if(!list.length){ el.innerHTML='<div class="pick-row err">没拿到模型列表</div>'; return; }
+      if(!list.length){
+        var why=(d.error&&(d.error.message||d.error.type||d.error.code))||('HTTP '+o.st+(o.d?'':' · 返回的不是 JSON'));
+        if(!key) why='先填密钥';
+        el.innerHTML='<div class="pick-row err">没拿到模型列表：'+apiEsc(String(why))+'</div>'; return;
+      }
       /* ★ 6.54：拉到的列表存起来，由每行的 ▾ 自己挑 —— 以前这里固定"填入 Chat"，
          STT/TTS/Image/Vector 根本没法从这份列表里选（用户："不知道拉的是哪一个"）。 */
       window.__presetModels=list;
