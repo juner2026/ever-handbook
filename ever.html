@@ -22,7 +22,7 @@
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdf5f3">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2a1c22">
 <title>Ever</title>
-<script>window.__everVer="8.53-20261103-0523-mobile";</script>
+<script>window.__everVer="8.53-20261103-0531-mobile";</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'PingFang SC','Hiragino Sans GB',sans-serif}
@@ -16380,6 +16380,8 @@ function csFlip(key){
 }
 function csetRender(){
   var box=document.getElementById('csetBody'); if(!box) return;
+  /* 渲染完设置页，自动补一次看屏幕助手的探路结果（下一帧再跑，等 DOM 挂上去） */
+  setTimeout(function(){ try{ if(window.teWatchFillLog) window.teWatchFillLog(); }catch(e){} }, 300);
   var html='';
 
   /* ============================================================================
@@ -16438,7 +16440,10 @@ function csetRender(){
         +   '<div class="cs-btn" onclick="teWatchSaveBase()">保存</div>'
         +   '<div class="cs-btn" onclick="teWatchTest()">测试连接</div>'
         +   '<span id="teWhState" style="font-size:11px;color:#a98a90">'+_tbState+'</span>'
-        + '</div></div>';
+        + '</div>'
+        + '<div id="teWhLog" style="font-size:10.5px;line-height:1.5;color:#b09198;margin-top:7px;'
+        + 'font-family:ui-monospace,Menlo,monospace;word-break:break-all">探路中…</div>'
+        + '</div>';
     }catch(e){}
     /* 断线自查：单独模型 + 一键测接口（出错会直接说限流/密钥/不支持看图/超时） */
     try{
@@ -62208,6 +62213,24 @@ html body.te-night #p-set#p-set.has-setwp .st2-nav{
 
   /* 页面起来先探一次：探到了，设置里那个开关就不会再弹「只在 App 里能用」 */
   setTimeout(function () { H.probe(); }, 1500);
+
+  /* ★ 8.54：设置页一打开就把探路结果显示出来（不用点按钮）。
+     'teWhLog' 那一行就是给"连不上"取证用的：哪一环断的、每个地址各花了多久。 */
+  window.teWatchFillLog = function () {
+    var el = document.getElementById('teWhLog');
+    if (!el) return;
+    el.textContent = '探路中…';
+    H.probe().then(function (m) {
+      var e2 = document.getElementById('teWhLog');
+      if (!e2) return;
+      e2.textContent = (m ? '✓ 通 ' : '✗ 断 ') + (H.lastLog || '（没有记录）');
+      e2.style.color = m ? '#5c8a68' : '#b06a6a';
+      try {
+        var st = document.getElementById('teWhState');
+        if (st) st.textContent = m ? '● 已连接' : ('○ 连不上' + (H.lastLog ? '' : ''));
+      } catch (e) {}
+    });
+  };
 })();
 </script>
 <script id="tePwa">
