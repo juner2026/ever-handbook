@@ -22,7 +22,7 @@
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdf5f3">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2a1c22">
 <title>Ever</title>
-<script>window.__everVer="8.53-20261103-0350-mobile";</script>
+<script>window.__everVer="8.53-20261103-0356-mobile";</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'PingFang SC','Hiragino Sans GB',sans-serif}
@@ -21604,6 +21604,30 @@ function _momCompressByImg(file, MAX, finish){
 /* 相册回来：串行入队（inline onchange 调用，WebView 里最保险的一条路） */
 /* ★ 2026-10-23 第三版：选完就先把图画出来（objectURL，不解码不等压缩），
    压缩放后台。以前只要压缩这一步失败或变慢，格子里就什么都没有。 */
+/* ★ 8.53：浏览器里的选图兜底接线（只在网页版才需要）
+   ------------------------------------------------------------------
+   病根（线上实测）：`#momImgInput` 这个 <input type=file> 的 `onchange` 属性
+   在网页版里是 **null** —— 内联 onchange 没挂上（面板是 innerHTML 拼出来的，
+   重建时会丢属性）。于是"点＋ → 选一张图 → 什么也没发生"：`_momC.change` 永远是 0。
+   APK 里因为走原生 pickImages()，这条兜底路径没人真的用过，就一直没暴露。
+
+   做法：不用内联属性、也不赌"什么时候被创建"，直接在 document 上做**事件委托**
+   （捕获阶段），只要 change 来自 #momImgInput 就交给 momFilesChosen。
+   面板何时创建、重建多少次都不影响。 */
+(function(){
+  if(window.__teImgDelegated) return;
+  window.__teImgDelegated=1;
+  document.addEventListener('change', function(e){
+    var t=e.target;
+    if(!t || t.id!=='momImgInput') return;
+    /* 内联 onchange 正常时它已经处理并把 value 清空了 → 这里看到 0 个文件，直接让路，
+       避免同一个文件被处理两遍（双重渲染 / 计数翻倍）。 */
+    if(!t.files || !t.files.length) return;
+    try{ window.momFilesChosen(t); }
+    catch(err){ try{ mdbg('!!momFilesChosen 抛错', err&&err.message); }catch(x){} }
+  }, true);
+})();
+
 function momFilesChosen(input){
   try{ window._momC.change++; window._momC.files+=((input&&input.files&&input.files.length)||0); }catch(e){}
   var files=[];
@@ -50936,16 +50960,19 @@ html[data-te-mat="journal"] .set-row:active{transform:scale(.992)!important}
        8.45 为了让三层链（引导页 → app.html → doc.html）里的 jh:* 消息能一路上抛，
        写成了无条件 `parent.postMessage(d,'*')`。
        但**网页版（ever.html 单文件）和 9.x 的 App（app.html 当顶层文档）里
-       parent === window** —— 每条 jh:* 消息 post 给自己 → 立刻再收到 → 再 post，永不停止。
+       parent === window** —— 于是每条 jh:* 消息都 post 给自己 → 立刻再收到 →
+       再 post 一遍，永不停止。
 
-       实测（Chromium 393×838，同一份页面）：
-         9 秒 postMessage 173,019 次 / message 处理器 1,557,114 次；
-         再 idle 3 秒又涨 2,056,086 次（≈ 每秒 68 万次）。
-       后果：主线程被吃满（"卡"的一大半）；而且**历史消息被反复重放** ——
-       点开聊天后按返回，那条 jh:open(chat) 会被无限次重新执行，
-       于是"返回 → 闪桌面 → 又被拉回聊天"，怎么退都退不出去。
+       实测（Chromium，393×838，同一份页面）：
+         9 秒内 postMessage 173,019 次、message 处理器 1,557,114 次；
+         再 idle 3 秒还涨了 2,056,086 次（≈ 每秒 68 万次）。
+       后果：主线程被吃满（这就是"卡"的一大半）；更要命的是**历史消息被反复重放** ——
+       点开聊天后按返回，那条 `jh:open(chat)` 会被无限次重新执行，
+       所以"返回 → 闪桌面 → 又被拉回聊天"，怎么退都退不出去。
 
-       修法：① parent === window 直接不转发；② 转出去的那份打 __teFwd 标记，不二次转发。
+       修法两条一起上：
+         ① 只有 parent 真的是别人时才转发（parent === window 直接不转）；
+         ② 转出去的那份打 __teFwd 标记，别人收到也不会再转一次。
        ================================================================== */
     try{
       if(d && typeof d.t==='string' && d.t.indexOf('jh:')===0 && !d.__teFwd
