@@ -22,7 +22,7 @@
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdf5f3">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2a1c22">
 <title>Ever</title>
-<script>window.__everVer="8.53-20261103-0715-mobile";</script>
+<script>window.__everVer="8.53-20261103-0728-mobile";</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'PingFang SC','Hiragino Sans GB',sans-serif}
@@ -26314,6 +26314,37 @@ function collectCurrent(){
 
 /* ===== 每个模型卡片内部的：拉取 / 测试 / 保存 ===== */
 
+/* ★ 8.60：内置候选模型名
+   ------------------------------------------------------------------
+   用户报"拉取失败"时，最常见的原因不是页面 bug，而是**401 密钥被服务端拒了**
+   （或者地址填的是 A 家、key 是 B 家的）。这时候"自动补全"再怎么努力也拉不到东西。
+   所以这里按接口地址猜服务商，直接给候选名字 —— 不联网、不用密钥也能把模型名填上。 */
+var TE_MODEL_GUESS=[
+  [/deepseek/i, ['deepseek-chat','deepseek-reasoner']],
+  [/moonshot|kimi/i, ['moonshot-v1-8k','moonshot-v1-32k','kimi-k2-0905-preview']],
+  [/bigmodel|zhipu|glm/i, ['glm-4-plus','glm-4-air','glm-4-flash']],
+  [/dashscope|aliyun|qwen/i, ['qwen-max','qwen-plus','qwen-vl-max']],
+  [/siliconflow/i, ['deepseek-ai/DeepSeek-V3','Qwen/Qwen2.5-72B-Instruct']],
+  [/openai\\.com/i, ['gpt-4o','gpt-4o-mini','gpt-4.1-mini']],
+  [/anthropic|claude/i, ['claude-sonnet-4-5','claude-haiku-4-5']],
+  [/generativelanguage|gemini/i, ['gemini-2.0-flash','gemini-2.5-pro']],
+];
+function teModelGuess(base){
+  var b=String(base||'');
+  for(var i=0;i<TE_MODEL_GUESS.length;i++){
+    if(TE_MODEL_GUESS[i][0].test(b)) return {host:b.match(/https?:\/\/([^\/]+)/i)?RegExp.$1:b, list:TE_MODEL_GUESS[i][1]};
+  }
+  return null;
+}
+/* 把失败原因翻译成人话 —— 用户看到的应该是一句能动手的话，不是 JSON */
+function teHttpHint(status){
+  if(status===401||status===403) return '密钥被拒：这是 401/403。检查三件事 —— ① key 是不是**这个服务商**的（地址填 deepseek、key 是别家的就会这样）；② key 有没有复制全、末尾有没有空格；③ 有没有过期/欠费。';
+  if(status===404) return '地址对不上：404。常见是多了/少了 /v1（DeepSeek 要 https://api.deepseek.com/v1）。';
+  if(status===429) return '被限流：429。等一会儿再试，或换模型。';
+  if(status>=500) return '服务端出错：'+status+'。不是你的配置问题，过会儿再试。';
+  return '';
+}
+
 /* 拉取：用这个模型自己填的地址+密钥拉模型列表，结果显示在卡片里 */
 function fetchFor(prefix,type){
   if(prefix==='g') collectGlobal(); else collectPreset();
@@ -26343,14 +26374,22 @@ function fetchFor(prefix,type){
         }).join('');
     })
     .catch(function(e){
-      /* ★ 8.29：把**真正请求的地址**一起显示 —— 一眼能判断是"地址没补全"还是"被跨域拦/鉴权失败" */
+      /* ★ 8.60：把**真正请求的地址**和**能用中文看懂的判读**一起显示；
+         并且就算拉不到，也按地址给一份内置候选（点一下就能填模型名）。 */
       var _m=String(e&&e.message||e);
+      var _code=(_m.match(/HTTP\s+(\d{3})/)||[])[1]||'';
       var _hint = /Failed to fetch|NetworkError|Load failed/i.test(_m)
-        ? '（网络失败：可能是跨域被浏览器拦、或者手机连不上这个域名；服务端要求 CORS 或改填中转地址）'
-        : '';
+        ? '网络失败：可能是跨域被浏览器拦、或者手机连不上这个域名'
+        : teHttpHint(parseInt(_code,10)||0);
+      var _g=teModelGuess(cfg.base);
+      var _cands=_g?('<div class="pick-row hint">离线候选（按地址猜的，点一下填入）：</div>'
+        + _g.list.map(function(m){
+            return '<div class="pick-row" data-m="'+encodeURIComponent(m)+'" onclick="pickForEl(this,\''+prefix+'\',\''+type+'\')">'+apiEsc(m)+'</div>';
+          }).join('')):'';
       box.innerHTML='<div class="pick-row err">失败：'+apiEsc(_m)+'</div>'
         +'<div class="pick-row hint">请求：'+apiEsc(_u)+'</div>'
-        +(_hint?('<div class="pick-row hint">'+apiEsc(_hint)+'</div>'):'');
+        +(_hint?('<div class="pick-row err" style="font-weight:600">'+apiEsc(_hint)+'</div>'):'')
+        +_cands;
     });
 }
 function pickForEl(el,prefix,type){
@@ -26382,7 +26421,7 @@ function testModel(prefix,type){
   box.textContent='测试中…';
   var t0=Date.now();
   if(type==='chat'){
-    if(!cfg.model){ done(false,'先填模型名'); return; }
+    if(!cfg.model){ done(false,'先点「拉取」选一个模型名，或手填（DeepSeek 用 deepseek-chat）'); return; }
     fetch(apiUrl(cfg.base,'/chat/completions'),{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.key},
