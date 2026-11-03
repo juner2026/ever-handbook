@@ -884,6 +884,19 @@
         }, false);
       }
     }
+    /* ★ 8.61.5：桌面这张画（.m2bst）在建好之后，把上次换的图恢复出来。
+       以前只有「收到 jh:img 消息那一刻」才画一次 —— 退出/刷新后没人去取，
+       图其实还在 localStorage 里，看着就是"全没了"。
+       放在这里是因为 .m2bst 是这一段才创建的，早于它取不到元素。 */
+    try {
+      m2imgLoad('te2_m2img_scene').then(function (u) {
+        if (!u || !sc) return;
+        sc.style.backgroundImage = 'url("' + u + '")';
+        sc.style.backgroundSize = 'cover';
+        sc.style.backgroundPosition = '50% 50%';
+        sc.classList.add('has-img');
+      });
+    } catch (x) {}
     m2imgWire(wrap);
   }
 

@@ -9502,6 +9502,11 @@ if (typeof window !== 'undefined'){
        以前只在收到 jh:img 消息时画一次，退出/刷新后桌面背景就没了（图其实还在 localStorage 里）。
        这里进页面就按 key 找一次，找不到再问外层要（jh:pickimg）。 */
     (function restore(){
+      /* ★ 8.61.5：这一段原来直接用了上一个函数里的 sc（作用域外，等于 undefined），
+         一进去就 ReferenceError 被外层 catch 吞掉 —— 所以 8.61.4 的恢复其实一次都没跑过。
+         这里自己取一次元素。 */
+      var sc=document.querySelector('.m2bst');
+      if(!sc) return;
       var k='te2_m2img_scene', u='';
       try{ u = localStorage.getItem(k)||''; }catch(e){}
       if(!u){
