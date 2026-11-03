@@ -22,7 +22,7 @@
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdf5f3">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2a1c22">
 <title>Ever</title>
-<script>window.__everVer="8.53-20261103-0604-mobile";</script>
+<script>window.__everVer="8.53-20261103-0649-mobile";</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'PingFang SC','Hiragino Sans GB',sans-serif}
@@ -62246,6 +62246,40 @@ html body.te-night #p-set#p-set.has-setwp .st2-nav{
       } catch (e) {}
     });
   };
+})();
+</script>
+<script id="teWatchCfgPush">
+/* ★ 8.58 · 把接口配置自动推给「Ever 陪看」那个小窗 App
+   ------------------------------------------------------------------
+   为什么：小窗要自己调接口（网页切到别的 App 会被系统掐住），但让用户在 App 里
+   再填一遍地址/密钥/模型很蠢 —— 这些手帐里本来就有。
+   所以页面每隔一会儿把 {base,key,model,persona,name,style} POST 到
+   http://127.0.0.1:8899/config，App 那边存进 SharedPreferences，开机就能用。
+   · 用 Content-Type: text/plain 是为了**不触发 CORS 预检**（简单请求）；
+   · 服务不可用时静默失败，不影响页面任何功能。 */
+(function(){
+  var BASE = 'http://127.0.0.1:8899';
+  function push(){
+    try{
+      var c = (typeof apiEff === 'function') ? apiEff('chat') : null;
+      if (!c || !c.base || !c.key) return false;
+      var persona = '', nm = '';
+      try { persona = localStorage.getItem('user_persona') || localStorage.getItem('sv_persona') || ''; } catch (e) {}
+      try { nm = localStorage.getItem('user_name') || localStorage.getItem('mom_name') || ''; } catch (e) {}
+      var body = JSON.stringify({ base: c.base, key: c.key, model: c.model,
+                                  persona: persona, name: nm, style: 'danmu' });
+      fetch(BASE + '/config', { method: 'POST', cache: 'no-store',
+                                headers: { 'Content-Type': 'text/plain' },
+                                body: body, keepalive: true })
+        .then(function(r){ window.__teCfgPushed = r.ok ? Date.now() : 0; })
+        .catch(function(){ window.__teCfgPushed = 0; });
+      return true;
+    }catch(e){ return false; }
+  }
+  window.tePushWatchCfg = push;
+  setTimeout(push, 2600);          /* 页面起来一会儿就推一次 */
+  setTimeout(push, 9000);          /* 再来一次：手帐的接口配置有时候是异步加载的 */
+  setInterval(push, 60000);        /* 之后每分钟补一次（App 后开也能拿到） */
 })();
 </script>
 <script id="tePwa">
