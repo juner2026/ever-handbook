@@ -4219,6 +4219,12 @@ html:not(.jh-home-on) #jh-home{visibility:hidden!important;pointer-events:none!i
 /* 家园开着的时候桌面继续挂着画（家园那层是不透明的），退出时零重排 */
 html.te-home-open #jh-home{display:block!important;visibility:visible!important;pointer-events:none!important}
 /* ★ 8.05：全屏珍珠已删除，这条规则作废（保留注释说明来龙去脉） */
+/* ===== round-812: 盒子铺满兜底（见 docs/Ever-交接-20261102-8.10.md 的兜底路线）
+   只要 s≈1 且 fit≈1（手机必然），就给 html 挂 .jh-plain： #jh-home 直接 CSS 铺满视口，
+   不再写 width/height/left/top/transform —— 量歪 / 冻结 / 缩放链全被这条 !important 挡掉。
+   ?plain=0 可关掉做对照。 ===== */
+html.jh-plain #jh-home{left:0!important;top:0!important;right:0!important;bottom:0!important;
+  width:auto!important;height:auto!important;transform:none!important}
 #jh-frame{width:100%;height:100%;border:0;display:block;background:#fdf5f3}
 /* 首页不要底部 Tab 栏、也不要它下面那条空白：桌面铺满整屏 */
 html.jh-home-on .bar{display:none!important}
@@ -50365,6 +50371,12 @@ html[data-te-mat="journal"] .set-row:active{transform:scale(.992)!important}
        但在浏览器里 env(safe-area-inset-top) 有真值（这台实测 38px），而视口本身已经在状态栏下面 ——
        再让一次就成了重复让位：盒子被缩到 (525-38)*1.5=731，又整体下移 38px，
        屏幕上就是"上方一大片空白 + 底下翻页条被切"。App 那边 insets 本来就是 0，关掉完全无影响。 */
+    /* ★ 8.61 / round-812：盒子铺满兜底。s≈1 且 fit≈1 时不再用 JS 写尺寸，交给 CSS。 */
+    try{
+      var _r=document.documentElement, _pl=(s>0.995 && s<1.005 && fit>0.999);
+      if(/[?&]plain=0/.test(location.search||'')) _pl=false;
+      if(_pl) _r.classList.add('jh-plain'); else _r.classList.remove('jh-plain');
+    }catch(e){}
     var IN={t:0,r:0,b:0,l:0}, EDGE=0;   /* 6.26：EDGE 原为 4，会让桌面无条件缩窄 8px 并右移 4px（inset=0 时也生效）—— 右侧内容被挤出视口，用户看到「最右边被裁」。inset 全 0 时这里必须严格等于 0，盒子才能和 App(6.01) 一模一样。 */
     var aw=Math.max(240, vw-IN.l-IN.r-EDGE*2);
     var ah=Math.max(240, vh-IN.t-IN.b-EDGE*2);
