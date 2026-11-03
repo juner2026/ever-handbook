@@ -69,7 +69,13 @@ self.addEventListener('fetch', (e) => {
       /* 每个 URL 各存各的：/, /index.html, /ever.html 内容不同，绝不能共用一个 key
          （共用的那次直接导致了"跳转页自循环 → 白屏"） */
       const hit = await c.match(req, { ignoreSearch: true });
-      const put = (r) => { if (r && r.ok && /text\/html/i.test(r.headers.get('content-type') || '')) c.put(req, r.clone()).catch(() => {}); };
+      const put = (r) => {
+        if (!(r && r.ok && /text\/html/i.test(r.headers.get('content-type') || ''))) return;
+        /* ★ 8.63：**必须 waitUntil**。不挂上去，SW 的 fetch 事件一结束，
+           put 的写入就被掐断 —— 表现是"SW 是控制中，但页面永远命中不了缓存，每次重下 9.5MB"。 */
+        const job = c.put(req, r.clone()).catch(() => {});
+        try { e.waitUntil(job); } catch (x) {}
+      };
       if (!hit) {
         try { const r = await fetch(req); put(r); return r; }
         catch (x) { return new Response('离线，且这台设备还没缓存过页面。', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }); }
