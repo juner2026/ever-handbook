@@ -18,8 +18,8 @@
 
    发版时改两个地方：VER（换缓存桶，清旧）和 BUILD（必须等于 v.txt 里那行）。
 */
-const VER = 'ever-861';
-const BUILD = '8.60';
+const VER = 'ever-862';
+const BUILD = '8.60.1';
 
 const PRECACHE = [
   './',
@@ -50,7 +50,10 @@ self.addEventListener('activate', (e) => {
 
 /* ★ 8.56：根地址（/ 或 index.html）与 ever.html?v=… 共用**同一个缓存条目**，
    不然 17MB 的页面会在设备上存两份。内容本来就是同一份（index.html 是 ever.html 的副本）。 */
-const PAGE_KEY = new URL('./app.html', self.location).href;
+/* ★ 8.60.1：不要合并缓存键！
+   之前把「/（1KB 跳转页）」和「app.html（3.5MB 本体）」共用同一个 key，
+   结果缓存里存的是跳转页 → 访问 / 得到跳转页 → 跳到 app.html → 又拿到跳转页 → 死循环白屏。
+   现在每个 URL 各存各的（ignoreSearch 忽略 ?v= 即可）。 */
 
 async function remoteBuild() {
   try {
@@ -80,12 +83,11 @@ self.addEventListener('fetch', (e) => {
   if (isPage) {
     e.respondWith((async () => {
       const c = await caches.open(VER);
-      const key = new Request(PAGE_KEY);
-      const hit = await c.match(key, { ignoreSearch: true });
+      const hit = await c.match(req, { ignoreSearch: true });
       if (!hit) {
         try {
           const r = await fetch(req);
-          if (r && r.ok) c.put(key, r.clone()).catch(() => {});
+          if (r && r.ok && /text\/html/i.test(r.headers.get('content-type') || '')) c.put(req, r.clone()).catch(() => {});
           return r;
         } catch (x) {
           return new Response('离线，且这台设备还没缓存过页面。', {
@@ -96,7 +98,7 @@ self.addEventListener('fetch', (e) => {
       if (id && id !== BUILD) {
         try {
           const r = await fetch(req, { cache: 'no-cache' });
-          if (r && r.ok) { c.put(key, r.clone()).catch(() => {}); return r; }
+          if (r && r.ok && /text\/html/i.test(r.headers.get('content-type') || '')) { c.put(req, r.clone()).catch(() => {}); return r; }
         } catch (x) {}
       }
       return hit;
