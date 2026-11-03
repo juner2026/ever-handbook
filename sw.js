@@ -1,22 +1,30 @@
-/* Ever · 网页版 PWA 的 service worker（8.49 新增）
+/* Ever · 网页版 PWA 的 service worker（8.55）
    ------------------------------------------------------------------
-   目的（就三条）：
-     1. 打开秒进：ever.html 是 17MB 单文件，每次从局域网/网络重下太浪费 —— 命中缓存直接给；
-     2. 装得像 App：Chrome 要求「有 SW + fetch 处理 + 方图标」才允许安装（WebAPK）；
-     3. 断网也能看手帐（已经加载过的部分）。
+   目标三条：
+     1. 打开秒进：ever.html 是 17MB 单文件（Pages gzip 后仍有 9.5MB），绝不能每次重下；
+     2. 发版能立刻看到：只多问一个几十字节的 v.txt，版本变了才拉新的；
+     3. 断网也能看已经加载过的部分。
 
    策略：
-     · 导航 / ever.html  → stale-while-revalidate（先用缓存秒开，后台拉新版更新缓存）
-     · 图片/字体/css/js  → cache-first（这些基本不变）
-     · 其它              → 照常走网络
+     · 页面（navigate / ever.html / index.html）
+         → 缓存优先；命中缓存后**只**取 /v.txt（几十字节）比对 BUILD：
+             版本没变 → 直接给缓存（秒开，不再重下 9.5MB）
+             版本变了 → 拉一次新页面、更新缓存，这次就返回新的
+     · 图片/字体/css/js → cache-first
+     · 其它 → 走网络
 
-   发新版时：把 VER 里的版本号改掉（旧缓存会在 activate 时清掉）。
-   注意：SW 只在 https 或 localhost 生效；局域网 http://192.168.x.x 会静默不注册。
+   ★ 8.55 为什么改：8.54 试过"网络优先"，结果手机上每次打开都重下 9.5MB，
+     慢网下表现就是"卡在开屏"。缓存优先 + 版本探针才是正解。
+
+   发版时改两个地方：VER（换缓存桶，清旧）和 BUILD（必须等于 v.txt 里那行）。
 */
-const VER = 'ever-854'
+const VER = 'ever-855';
+const BUILD = '8.53-20261103-0531';
+
 const PRECACHE = [
   './',
   './ever.html',
+  './v.txt',
   './manifest.webmanifest',
   './aset/pwa/icon-192.png',
   './aset/pwa/icon-512.png',
@@ -26,7 +34,6 @@ const PRECACHE = [
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
     const c = await caches.open(VER);
-    /* 逐个加，任何一个失败都不该让整个安装废掉（17MB 那个最容易超时） */
     await Promise.all(PRECACHE.map((u) => c.add(u).catch(() => {})));
     self.skipWaiting();
   })());
@@ -40,12 +47,23 @@ self.addEventListener('activate', (e) => {
   })());
 });
 
+async function remoteBuild() {
+  try {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 2500);
+    const r = await fetch('./v.txt?_=' + Date.now(), { cache: 'no-store', signal: ctl.signal });
+    clearTimeout(t);
+    if (!r.ok) return '';
+    return (await r.text()).trim();
+  } catch (x) { return ''; }
+}
+
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
   let u;
   try { u = new URL(req.url); } catch (x) { return; }
-  if (u.origin !== self.location.origin) return;   /* 第三方接口一律不碰 */
+  if (u.origin !== self.location.origin) return;   /* 第三方接口 / 本机助手 一律不碰 */
 
   const isPage = req.mode === 'navigate' ||
                  u.pathname.endsWith('/') ||
@@ -54,26 +72,26 @@ self.addEventListener('fetch', (e) => {
 
   if (isPage) {
     e.respondWith((async () => {
-      /* ★ 8.54：页面改成**网络优先**。
-         以前是 stale-while-revalidate：先给缓存、后台再更新 —— 结果每次发版
-         用户都要开两次才能看到新的（装成 PWA 的话更糟，每次启动只算一次，
-         于是"改了却永远看不到"）。现在：先要网络（带 3.5 秒闸门），
-         拿不到才回落到缓存，离线仍然能开。 */
       const c = await caches.open(VER);
-      const net = (async () => {
+      const hit = await c.match(req, { ignoreSearch: true });
+      if (!hit) {
         try {
-          const ctl = new AbortController();
-          const t = setTimeout(() => ctl.abort(), 3500);
-          const r = await fetch(req, { signal: ctl.signal, cache: 'no-store' });
-          clearTimeout(t);
+          const r = await fetch(req);
           if (r && r.ok) c.put(req, r.clone()).catch(() => {});
           return r;
-        } catch (x) { return null; }
-      })();
-      const hit = await c.match(req, { ignoreSearch: true });
-      return (await net) || hit || new Response('离线，且这台设备还没缓存过页面。', {
-        status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      });
+        } catch (x) {
+          return new Response('离线，且这台设备还没缓存过页面。', {
+            status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+        }
+      }
+      const id = await remoteBuild();
+      if (id && id !== BUILD) {
+        try {
+          const r = await fetch(req, { cache: 'no-cache' });
+          if (r && r.ok) { c.put(req, r.clone()).catch(() => {}); return r; }
+        } catch (x) {}
+      }
+      return hit;
     })());
     return;
   }
@@ -87,9 +105,8 @@ self.addEventListener('fetch', (e) => {
         const r = await fetch(req);
         if (r && r.ok) c.put(req, r.clone()).catch(() => {});
         return r;
-      } catch (err) {
-        return new Response('', { status: 504 });
-      }
+      } catch (x) { return new Response('', { status: 504 }); }
     })());
+    return;
   }
 });
