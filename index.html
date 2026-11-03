@@ -8,6 +8,18 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="aset/pwa/icon-192.png">
 <meta http-equiv="refresh" content="0; url=ever.html">
+<script>
+/* meta refresh 在某些内置浏览器（微信/QQ/部分国产 WebView）里会被忽略，
+   所以再补一条 JS 跳转；两条都失效时，页面上那行链接还能手点。 */
+(function(){
+  try{
+    var t = 'ever.html';
+    if(location.search) t += location.search;
+    if(location.hash) t += location.hash;
+    location.replace(t);
+  }catch(e){}
+})();
+</script>
 <style>
   html,body{margin:0;height:100%;background:#fdf4f7;color:#8a5a6a;
     font:16px/1.7 -apple-system,"Noto Sans SC",sans-serif;
