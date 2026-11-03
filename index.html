@@ -24,7 +24,7 @@
 /* 页面拆包以后，入口从 17MB 变成 3.5MB（压缩后约 1.1MB）——开屏能早得多开始。
    这里只是个几十字节的过门：纸色 + 一行字，立刻跳过去。 */
 (function(){
-  var t='app.html';
+  var t='ever.html';
   try{ if(location.search) t+=location.search; if(location.hash) t+=location.hash; }catch(e){}
   try{ document.getElementById('go').href=t; }catch(e){}
   try{ location.replace(t); }catch(e){}
