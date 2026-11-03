@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fdf4f7">
+<title>Ever · 修复缓存</title>
+<style>
+  html,body{margin:0;height:100%;background:#fdf4f7;color:#4a3226;
+    font:15px/1.7 -apple-system,"Noto Sans SC",sans-serif}
+  .w{max-width:520px;margin:0 auto;padding:26px 20px}
+  h1{font:italic 400 26px/1.3 "Songti SC",Georgia,serif;color:#8a5a6a;margin:0 0 14px}
+  .card{background:#fff;border:1px solid #f0d7e0;border-radius:14px;padding:14px 16px;margin:12px 0;
+    box-shadow:0 6px 18px rgba(180,120,140,.08);font-size:13.5px}
+  .ok{color:#3f8f5a}.bad{color:#c04a4a}
+  a.btn{display:block;text-align:center;background:#e9b7ca;color:#fff;text-decoration:none;
+    padding:14px;border-radius:12px;margin-top:16px;font-weight:600}
+  code{background:#fdeef3;padding:1px 6px;border-radius:6px;font-size:12.5px}
+  li{margin:5px 0}
+</style>
+</head>
+<body><div class="w">
+<h1>修复缓存</h1>
+<p style="color:#9a7b85;font-size:13px;margin-top:-6px">
+这一页专治「一直白屏 / 开屏不出来」——原因是手机里留着一份**被截断的旧页面缓存**。</p>
+
+<div class="card" id="log">正在清理…</div>
+
+<a class="btn" id="go" href="ever.html">清完了，去手帐</a>
+
+<div class="card">
+  如果还是白屏，做这一步（浏览器手动清，最彻底）：
+  <ol>
+    <li>点地址栏左边的锁/图标 → <b>网站设置</b>（或 Chrome ⋮ → 设置 → 网站设置）</li>
+    <li>找到 <code>juner2026.github.io</code> → <b>清除数据 / 删除网站数据</b></li>
+    <li>回到 <code>https://juner2026.github.io/ever-handbook/</code> 重新打开</li>
+  </ol>
+</div>
+
+<script>
+(async function(){
+  var log=[];
+  function say(s, cls){ log.push('<div class="'+(cls||'')+'">'+s+'</div>');
+    document.getElementById('log').innerHTML=log.join(''); }
+  try{
+    if ('serviceWorker' in navigator){
+      var rs = await navigator.serviceWorker.getRegistrations();
+      say('发现 Service Worker：'+rs.length+' 个','ok');
+      for (var i=0;i<rs.length;i++){
+        try{ await rs[i].unregister(); say('已注销 '+rs[i].scope,'ok'); }
+        catch(e){ say('注销失败：'+e,'bad'); }
+      }
+    } else { say('这个浏览器没有 Service Worker','ok'); }
+  }catch(e){ say('读 Service Worker 失败：'+e,'bad'); }
+
+  try{
+    var keys = await caches.keys();
+    say('缓存桶：'+(keys.length?keys.join(', '):'（空）'),'ok');
+    for (var j=0;j<keys.length;j++){
+      try{ await caches.delete(keys[j]); say('已删除缓存 '+keys[j],'ok'); }
+      catch(e){ say('删缓存失败：'+e,'bad'); }
+    }
+  }catch(e){ say('清缓存失败：'+e,'bad'); }
+
+  say('清理完成。点下面的按钮进手帐（第一次会重新下载，慢一点是正常的）。','ok');
+})();
+</script>
+</div></body></html>

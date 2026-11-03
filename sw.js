@@ -1,69 +1,30 @@
-/* Ever · 网页版 PWA 的 service worker（v8.64 · 只做安全的事）
+/* Ever · 自助退役的 service worker（v8.65）
    ==========================================================================
-   背景（这几轮踩过的坑，都写在这儿省得再犯）：
-     1. app.html/doc.html/js 和 ever.html 两套并存 → 入口一改就互相覆盖；
-     2. 把 "/"（跳转页）和 ever.html 共用一个缓存 key → 跳转页自循环 → 白屏；
-     3. 在 SW 里给 17MB 的 ever.html 做缓存写入 → 实测会写出**截断的**内容
-        （只存进 128KB），下次直接把它当页面发出去 → 页面彻底坏掉。
-   --------------------------------------------------------------------------
-   所以现在只做两件事：
-     a) 静态小资源（图片/字体/css/js）cache-first —— 它们小、写缓存不会出问题；
-     b) **页面请求一律走网络**，交给浏览器自己的 HTTP 缓存
-        （GitHub Pages 给 ever.html 的是 cache-control: max-age=600，
-         10 分钟内再打开就是浏览器缓存命中，不会再下 9.5MB）。
-     c) 额外留一个 kill-switch：?nosw=1 打开页面会注销 SW 并清缓存（应急用）。
-   这个 SW 仍然存在（保留"可安装成应用"的能力），只是不再碰大文件。
-*/
-const VER = 'ever-864';
+   为什么把它做成"自杀"：
+     这轮反复出现的白屏，根源都是 SW 缓存了 17MB 单文件页面、而且写出的是**截断内容**
+     （实测只存进 128KB），下次就把半截页面当正常页面发出去。
+     与其继续和它斗，不如让它退役：
+       · 页面交回浏览器自己的 HTTP 缓存（GitHub Pages 给 max-age=600，够用）；
+       · 静态小资源也不需要它——本来就走浏览器缓存。
+     代价：不能再"安装成 App"（少一个图标入口），但换来"打开就能用"。
 
+   ★ 这个文件以后不要再往里加缓存逻辑。真要离线能力，另外开一个 scope 做，
+     别动 /ever-handbook/ 这个站点的根。
+*/
 self.addEventListener('install', (e) => { self.skipWaiting(); });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.filter((k) => k !== VER).map((k) => caches.delete(k)));
-    await self.clients.claim();
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    } catch (x) {}
+    try { await self.registration.unregister(); } catch (x) {}
+    try {
+      const cs = await self.clients.matchAll({ type: 'window' });
+      cs.forEach((c) => { try { c.navigate(c.url); } catch (x) {} });
+    } catch (x) {}
   })());
 });
 
-self.addEventListener('fetch', (e) => {
-  const req = e.request;
-  if (req.method !== 'GET') return;
-  let u;
-  try { u = new URL(req.url); } catch (x) { return; }
-  if (u.origin !== self.location.origin) return;          /* 第三方 / 本机助手不碰 */
-
-  /* 应急开关：?nosw=1 → 注销自己，并清掉本 SW 建的缓存 */
-  if (u.search.indexOf('nosw=1') >= 0) {
-    e.respondWith((async () => {
-      try { const rs = await self.registration.unregister(); } catch (x) {}
-      try { const keys = await caches.keys(); await Promise.all(keys.map((k) => caches.delete(k))); } catch (x) {}
-      return Response.redirect(u.href.replace('nosw=1', 'nosw=0'), 302);
-    })());
-    return;
-  }
-
-  /* 页面：不拦，直接用浏览器 HTTP 缓存 + 网络（大文件缓存交给浏览器最可靠） */
-  const isPage = req.mode === 'navigate' ||
-                 u.pathname.endsWith('/') ||
-                 u.pathname.endsWith('/ever.html') ||
-                 u.pathname.endsWith('/index.html');
-  if (isPage) return;                                      /* 让浏览器自己处理 */
-
-  /* 静态小资源：cache-first */
-  if (/\.(png|jpe?g|webp|gif|svg|woff2?|ttf|otf|css|js)$/i.test(u.pathname)) {
-    e.respondWith((async () => {
-      const c = await caches.open(VER);
-      const hit = await c.match(req, { ignoreSearch: true });
-      if (hit) return hit;
-      try {
-        const r = await fetch(req);
-        if (r && r.ok && r.status === 200) {
-          const job = c.put(req, r.clone()).catch(() => {});
-          try { e.waitUntil(job); } catch (x) {}
-        }
-        return r;
-      } catch (x) { return new Response('', { status: 504 }); }
-    })());
-  }
-});
+/* 不拦任何请求 */

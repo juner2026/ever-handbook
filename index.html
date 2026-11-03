@@ -21,19 +21,8 @@
   <div class="s">Journal</div>
   <a href="ever.html" id="go">正在进入手帐…</a>
 <script>
-/* ★ 8.63：在这层注册 service worker。
-   原因：当前 ever.html（8.07-1120 那一版）**把 serviceWorker.register 丢了**，
-   没有 SW → 没有缓存 → 每次打开都重新下 9.5MB → 表现就是"卡在开屏"。
-   这一页在仓库根目录，scope './' 正好覆盖 /ever-handbook/ 整个站点，
-   所以在这里注册一次，ever.html 之后走的就是 SW 的缓存优先路径。
-   （等 ever.html 那份重新带上注册了，这行可以删，留着也无害。） */
-(function(){
-  try{
-    if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
-      navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function(){});
-    }
-  }catch(e){}
-})();
+/* ★ 8.65：不再注册 service worker —— 它缓存 17MB 单文件页面会写出截断内容，
+   直接导致白屏。页面交给浏览器 HTTP 缓存；想彻底清干净就打开 /repair.html 。 */
 
 /* ★ 8.62 · 全部收口到 ever.html 这一套。
    之前同时存在 ever.html（单文件）和 app.html+doc.html+js（拆包），
