@@ -22,7 +22,7 @@
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdf5f3">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2a1c22">
 <title>Ever</title>
-<script>window.__everVer="8.53-20261103-0649-mobile";</script>
+<script>window.__everVer="8.53-20261103-0702-mobile";</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,'PingFang SC','Hiragino Sans GB',sans-serif}
@@ -62219,8 +62219,8 @@ html body.te-night #p-set#p-set.has-setwp .st2-nav{
         try { fetch((H.baseUsed || v) + '/meta', { cache: 'no-store' }).then(function (r) { return r.json(); })
                 .then(function (j) { H.meta = j; }).catch(function () {}); } catch (e) {}
       } else {
-        if (st) st.textContent = '○ 连不上 · ' + (H.lastLog || '都超时了');
-        try { if (typeof toast0 === 'function') toast0('连不上：' + (H.lastLog || v)); } catch (e) {}
+        if (st) st.textContent = '○ 网页预览没连上 · ' + (H.lastLog || '都超时了');
+        try { if (typeof toast0 === 'function') toast0('网页预览没连上（小窗 App 照常用）：' + (H.lastLog || v)); } catch (e) {}
       }
     });
   };

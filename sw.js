@@ -18,8 +18,8 @@
 
    发版时改两个地方：VER（换缓存桶，清旧）和 BUILD（必须等于 v.txt 里那行）。
 */
-const VER = 'ever-858';
-const BUILD = '8.53-20261103-0649';
+const VER = 'ever-859';
+const BUILD = '8.53-20261103-0702';
 
 const PRECACHE = [
   './',
