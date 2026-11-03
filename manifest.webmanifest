@@ -2,8 +2,8 @@
   "name": "Ever · 手帐",
   "short_name": "Ever",
   "description": "Ever 手帐桌面（手机端）",
-  "id": "./ever.html",
-  "start_url": "./ever.html",
+  "id": "./",
+  "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
   "display_override": [
@@ -14,7 +14,10 @@
   "background_color": "#fdf4f7",
   "theme_color": "#fdf4f7",
   "lang": "zh-CN",
-  "categories": ["lifestyle", "productivity"],
+  "categories": [
+    "lifestyle",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "aset/pwa/icon-192.png",
