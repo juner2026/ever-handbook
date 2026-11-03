@@ -13,7 +13,7 @@
    发新版时：把 VER 里的版本号改掉（旧缓存会在 activate 时清掉）。
    注意：SW 只在 https 或 localhost 生效；局域网 http://192.168.x.x 会静默不注册。
 */
-const VER = 'ever-853'
+const VER = 'ever-854'
 const PRECACHE = [
   './',
   './ever.html',
@@ -54,13 +54,24 @@ self.addEventListener('fetch', (e) => {
 
   if (isPage) {
     e.respondWith((async () => {
+      /* ★ 8.54：页面改成**网络优先**。
+         以前是 stale-while-revalidate：先给缓存、后台再更新 —— 结果每次发版
+         用户都要开两次才能看到新的（装成 PWA 的话更糟，每次启动只算一次，
+         于是"改了却永远看不到"）。现在：先要网络（带 3.5 秒闸门），
+         拿不到才回落到缓存，离线仍然能开。 */
       const c = await caches.open(VER);
+      const net = (async () => {
+        try {
+          const ctl = new AbortController();
+          const t = setTimeout(() => ctl.abort(), 3500);
+          const r = await fetch(req, { signal: ctl.signal, cache: 'no-store' });
+          clearTimeout(t);
+          if (r && r.ok) c.put(req, r.clone()).catch(() => {});
+          return r;
+        } catch (x) { return null; }
+      })();
       const hit = await c.match(req, { ignoreSearch: true });
-      const net = fetch(req).then((r) => {
-        if (r && r.ok) c.put(req, r.clone()).catch(() => {});
-        return r;
-      }).catch(() => null);
-      return hit || (await net) || new Response('离线，且这台设备还没缓存过页面。', {
+      return (await net) || hit || new Response('离线，且这台设备还没缓存过页面。', {
         status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       });
     })());
