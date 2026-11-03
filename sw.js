@@ -17,7 +17,6 @@ const BUILD = '8.61.6';
 
 const PRECACHE = [
   './',
-  './ever.html',
   './v.txt',
   './manifest.webmanifest',
   './aset/pwa/icon-192.png',
