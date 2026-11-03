@@ -9498,6 +9498,25 @@ if (typeof window !== 'undefined'){
       sc.classList.add('has-img');
       try{ localStorage.setItem('te2_m2img_'+(d.key||'scene'), d.url); }catch(x){}
     });
+    /* ★ 8.61.4：重开时把上次换的图恢复出来。
+       以前只在收到 jh:img 消息时画一次，退出/刷新后桌面背景就没了（图其实还在 localStorage 里）。
+       这里进页面就按 key 找一次，找不到再问外层要（jh:pickimg）。 */
+    (function restore(){
+      var k='te2_m2img_scene', u='';
+      try{ u = localStorage.getItem(k)||''; }catch(e){}
+      if(!u){
+        try{ var rq=indexedDB.open('tidal_m2img',1); rq.onsuccess=function(ev){
+          try{ var db=ev.target.result; var tx=db.transaction('imgs','readonly'); var g=tx.objectStore('imgs').get(k);
+            g.onsuccess=function(){ if(g.result){ sc.style.backgroundImage='url("'+g.result+'")'; sc.style.backgroundSize='cover'; sc.style.backgroundPosition='50% 50%'; sc.classList.add('has-img'); } };
+          }catch(x){}
+        }; }catch(e){}
+      } else {
+        sc.style.backgroundImage='url("'+u+'")';
+        sc.style.backgroundSize='cover';
+        sc.style.backgroundPosition='50% 50%';
+        sc.classList.add('has-img');
+      }
+    })();
   }catch(e){}
 })();
 </script>

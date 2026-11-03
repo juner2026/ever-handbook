@@ -640,6 +640,58 @@
   }
 
   /* ---- 可换图的小图位：点一下选图，压缩成 jpeg 存 localStorage，重开还在 ---- */
+  /* ===== 8.61.4：换图改存 IndexedDB（localStorage 存不下就静默丢失） =====
+     以前只写 localStorage.setItem，一旦配额满（异常被 try/catch 吞掉），
+     图当时看着在，一退出就"全没了"——用户报的正是这个。
+     现在：先试 localStorage，失败/放不下就落到 IndexedDB（配额大得多），
+     读取时两个地方都找；两个都写不进去才提示。 */
+  var m2db = null;
+  function m2dbOpen(){
+    if (m2db) return m2db;
+    try {
+      m2db = new Promise(function(res, rej){
+        var r = indexedDB.open('tidal_m2img', 1);
+        r.onupgradeneeded = function(){ try{ if(!r.result.objectStoreNames.contains('imgs')) r.result.createObjectStore('imgs'); }catch(x){} };
+        r.onsuccess = function(){ res(r.result); };
+        r.onerror = function(){ rej(); };
+      });
+      m2db.catch(function(){ m2db = null; });
+    } catch(e){ m2db = null; }
+    return m2db;
+  }
+  function m2idbGet(k){
+    return m2dbOpen().then(function(db){ return new Promise(function(res){
+      try{
+        var tx = db.transaction('imgs','readonly'), st = tx.objectStore('imgs');
+        var rq = st.get(k);
+        rq.onsuccess = function(){ res(rq.result || ''); };
+        rq.onerror = function(){ res(''); };
+      }catch(e){ res(''); }
+    });}).catch(function(){ return ''; });
+  }
+  function m2idbPut(k,v){
+    return m2dbOpen().then(function(db){ return new Promise(function(res){
+      try{
+        var tx = db.transaction('imgs','readwrite'), st = tx.objectStore('imgs');
+        st.put(v,k);
+        tx.oncomplete = function(){ res(true); };
+        tx.onerror = function(){ res(false); };
+        tx.onabort = function(){ res(false); };
+      }catch(e){ res(false); }
+    });}).catch(function(){ return false; });
+  }
+  function m2imgLoad(k){
+    var v = '';
+    try{ v = localStorage.getItem(k) || ''; }catch(e){}
+    if (v) return Promise.resolve(v);
+    return m2idbGet(k);
+  }
+  function m2imgSave(k,v){
+    var okLs = false;
+    try{ localStorage.setItem(k,v); okLs = true; }catch(e){ okLs = false; }
+    if (okLs) return Promise.resolve(true);
+    return m2idbPut(k,v);
+  }
   function m2imgWire(host) {
     $$('[data-m2img]', host).forEach(function (box) {
       if (box.getAttribute('data-wired') === '1') return;
@@ -657,7 +709,7 @@
         box.style.backgroundPosition = '50% 50%';
         box.classList.add('has-img');
       };
-      try { apply(localStorage.getItem(key)); } catch (e) {}
+      m2imgLoad(key).then(function(u){ if(u) apply(u); });
       inp.addEventListener('change', function () {
         var f = inp.files && inp.files[0]; if (!f) return;
         var url = URL.createObjectURL(f), img = new Image();
@@ -668,7 +720,9 @@
           cv.height = Math.max(1, Math.round(img.height * k));
           cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
           var data = cv.toDataURL('image/jpeg', 0.75);
-          try { localStorage.setItem(key, data); } catch (e) {}
+          m2imgSave(key, data).then(function(ok){
+            if(!ok && window.toast) toast('这张图存不住，浏览器空间满了');
+          });
           apply(data);
           URL.revokeObjectURL(url);
         };
